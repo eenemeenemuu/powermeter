@@ -23,6 +23,9 @@ if (!isset($_GET['file'])) {
     $res = $_GET['res'] ? $_GET['res'] : 5;
     $t1 = $_GET['t1'] ? $_GET['t1'] : 0;
     $t2 = $_GET['t2'] ? $_GET['t2'] : 23;
+    if ($t1 > $t2) {
+        $t1 = $t2;
+    }
     $data = file_get_contents($log_file_dir.$files[$_GET['file']]);
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
