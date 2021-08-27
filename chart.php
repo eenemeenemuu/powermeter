@@ -21,6 +21,8 @@ if (!isset($_GET['file'])) {
     echo '</body></html>';
 } else {
     $res = $_GET['res'] ? $_GET['res'] : 5;
+    $t1 = $_GET['t1'] ? $_GET['t1'] : 0;
+    $t2 = $_GET['t2'] ? $_GET['t2'] : 23;
     $data = file_get_contents($log_file_dir.$files[$_GET['file']]);
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
@@ -43,7 +45,8 @@ if (!isset($_GET['file'])) {
         }
         $wh = 0;
         $dataPoints = array();
-        for ($h = 0; $h < 24; $h++) {
+        //for ($h = 0; $h < 24; $h++) {
+        for ($h = $t1; $h <= $t2; $h++) {
             for ($m = 0; $m < 60; $m = $m + $res) {
                 $i = 0;
                 $hm = 0;
@@ -73,7 +76,7 @@ if (!isset($_GET['file'])) {
     }
     echo '<title>'.$date.'</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script></head>
         <body><a href="?">Zurück zur Übersicht</a>';
-    $params = '&amp;res='.$res.'&amp;fix='.$fix_axis_y;
+    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     echo '<div style="width: 100%; text-align: center">';
     if ($_GET['file'] < count($files)-1) {
         echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.($_GET['file']+1).$params.'">&laquo;</a></button> ';
@@ -125,6 +128,21 @@ if (!isset($_GET['file'])) {
         }
         echo "<option value=\"$value\"$selected>$text</option>";
     }
-    echo '</select> | Skala fixieren auf <input type="text" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)</form></body></html>';
+    echo '</select>';
+    echo ' | Skala fixieren auf <input type="text" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
+    echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
+    for ($i = 0; $i < 24; $i++) {
+        $selected = $i == $t1 ? ' selected="selected"' : '';
+        $i_str = $i < 10 ? '0'.$i.':xx' : $i.':xx';
+        echo "<option value=\"$i\"$selected>$i_str</option>";
+    }
+    echo '</select> bis <select name="t2" onchange="form.submit();">';
+    for ($i = 0; $i < 24; $i++) {
+        $selected = $i == $t2 ? ' selected="selected"' : '';
+        $i_str = $i < 10 ? '0'.$i.':xx' : $i.':xx';
+        echo "<option value=\"$i\"$selected>$i_str</option>";
+    }
+    echo '</select>';
+    echo '</form></body></html>';
 }
 //EOF
