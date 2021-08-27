@@ -1,0 +1,22 @@
+<?php
+// basic configuration - mandatory
+$device = 'tasmota'; // possible options: fritzbox, tasmota
+$host = 'tasmotaplug4'; // host name or ip address
+$produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
+$refresh_rate = 2; // refresh rate of index.php in seconds
+
+// additional configuration for fritzbox
+$user = ''; // user name
+$pass = ''; // password
+
+// logging configuration
+$log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
+$log_rate = 6; // how often should data be gathered per minute
+$use_cache = false; // use latest data from log file to display power on index.php; can also be disabled dynamically with parameter 'nocache'
+$fix_axis_y = 0; // fix chart to specific value, set to 0 to calculate automatically
+
+// additional logging configuration
+$host_external = 'https://example.com/my_folder/'; // additional external host for logging and display - must end with trailing slash (/)! - keep empty or comment out to disable
+$host_auth_key = 'abc123'; // auth key must match on external host
+
+//EOF
