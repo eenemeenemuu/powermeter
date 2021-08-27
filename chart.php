@@ -114,7 +114,7 @@ if (!isset($_GET['file'])) {
     });
     </script>";
     echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
-    foreach (array('-1', '1', '5', '10', '15', '30', '60') as $value) {
+    foreach (array('-1', '1', '5', '10', '15', '20', '30', '45', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
             $text = 'Alle Messwerte anzeigen';
