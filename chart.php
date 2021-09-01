@@ -110,7 +110,10 @@ if (!isset($_GET['file'])) {
             }]
         },
         options: {
-            plugins: { legend: { display: false } },
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' W'; } } }
+            },
             scales: { y: { $axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } } },
             elements: { point: { radius: 0, hitRadius: 50 } },
             maintainAspectRatio: false,
