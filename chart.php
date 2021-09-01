@@ -21,8 +21,8 @@ if (!isset($_GET['file'])) {
     echo '</body></html>';
 } else {
     $res = $_GET['res'] ? $_GET['res'] : 5;
-    $t1 = $_GET['t1'] ? $_GET['t1'] : 0;
-    $t2 = $_GET['t2'] ? $_GET['t2'] : 23;
+    $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
+    $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
     if ($t1 > $t2) {
         $t1 = $t2;
     }
@@ -136,13 +136,13 @@ if (!isset($_GET['file'])) {
     echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
         $selected = $i == $t1 ? ' selected="selected"' : '';
-        $i_str = $i < 10 ? '0'.$i.':xx' : $i.':xx';
+        $i_str = $i < 10 ? '0'.$i.':00' : $i.':00';
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select> bis <select name="t2" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
         $selected = $i == $t2 ? ' selected="selected"' : '';
-        $i_str = $i < 10 ? '0'.$i.':xx' : $i.':xx';
+        $i_str = $i < 10 ? '0'.$i.':59' : $i.':59';
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
