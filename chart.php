@@ -110,24 +110,12 @@ if (!isset($_GET['file'])) {
             }]
         },
         options: {
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    $axisY_max
-                    ticks: {
-                        callback: function(value, index, values) {
-                            return value + ' W'; 
-                        }
-                    }
-                }
-            },
+            plugins: { legend: { display: false } },
+            scales: { y: { $axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } } },
             elements: { point: { radius: 0, hitRadius: 50 } },
             maintainAspectRatio: false,
             animation: false,
             normalized: true,
-            $axisY_max
         }
     });
     </script>";
