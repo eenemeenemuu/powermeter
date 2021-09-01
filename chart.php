@@ -32,13 +32,15 @@ if (!isset($_GET['file'])) {
     $data = array();
     if ($res == -1) {
         foreach ($lines as $line) {
-            $data[] = explode(",", $line);
+            $data_this = explode(",", $line);
+            $time_parts = explode(":", $data_this[1]);
+            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
         }
         $dataPoints = array();
         foreach($data as $value) {
-            //if (strlen($value[2]) > 0) {
-                $dataPoints[] = array("x" => $value[1], "y" => $value[2]);
-            //}
+            if ($value['h'] >= $t1 && $value['h'] <= $t2) {
+                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
+            }
         }
     } else {
         foreach ($lines as $line) {
