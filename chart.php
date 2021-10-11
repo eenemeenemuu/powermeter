@@ -2,12 +2,17 @@
 
 require('config.inc.php');
 
+$i = 0;
 $files = array();
 foreach(scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
     //if (substr($file, 0, 15) != 'balkonkraftwerk') {
     if ($file == '.' || $file == '..' || $file == 'stats.txt') {
         continue;
     }
+    if (isset($_GET['file']) && $file == $_GET['file'].'.csv') {
+        $pos = $i;
+    }
+    $i++;
     $files[] = $file;
 }
 
@@ -16,7 +21,8 @@ echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta h
 if (!isset($_GET['file'])) {
     echo '<title>'.$produce_consume.'sübersicht</title></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br />';
     foreach($files as $key => $file) {
-        echo "<a href=\"?file=$key\">".substr($file, 0, -4)."</a><br />";
+        $file_wo_ext = substr($file, 0, -4);
+        echo "<a href=\"?file=$file_wo_ext\">$file_wo_ext</a><br />";
     }
     echo '</body></html>';
 } else {
@@ -26,7 +32,7 @@ if (!isset($_GET['file'])) {
     if ($t1 > $t2) {
         $t1 = $t2;
     }
-    $data = file_get_contents($log_file_dir.$files[$_GET['file']]);
+    $data = file_get_contents($log_file_dir.$files[$pos]);
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
     $data = array();
@@ -83,14 +89,14 @@ if (!isset($_GET['file'])) {
         <body><a href="?">Zurück zur Übersicht</a>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     echo '<div style="width: 100%; text-align: center">';
-    if ($_GET['file'] < count($files)-1) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.($_GET['file']+1).$params.'">&laquo;</a></button> ';
+    if ($pos < count($files)-1) {
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.(substr($files[$pos+1], 0, -4)).$params.'">&laquo;</a></button> ';
     } else {
         echo '&laquo';
     }
     echo " $date ";
-    if ($_GET['file'] > 0) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.($_GET['file']-1).$params.'">&raquo;</a></button>';
+    if ($pos > 0) {
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.(substr($files[$pos-1], 0, -4)).$params.'">&raquo;</a></button>';
     } else {
         echo '&raquo;';
     }
