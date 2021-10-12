@@ -89,7 +89,7 @@ if (!isset($_GET['file'])) {
     $get_fix = trim($_GET['fix']);
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
     if ($fix_axis_y) {
-        $axisY_max = "max: $fix_axis_y,";
+        $axisY_max = " max: $fix_axis_y,";
     }
     echo '<title>'.$date.'</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script></head>
         <body><a href="?">Zurück zur Übersicht</a>';
@@ -126,7 +126,7 @@ if (!isset($_GET['file'])) {
                 legend: { display: false },
                 tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' W'; } } }
             },
-            scales: { y: { $axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } } },
+            scales: { y: { suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } } },
             elements: { point: { radius: 0, hitRadius: 50 } },
             maintainAspectRatio: false,
             animation: false,
