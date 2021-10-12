@@ -30,10 +30,10 @@ if (!isset($_GET['file'])) {
         $stat_parts = explode(',', $line);
         $chart_stats[$stat_parts[0]] = $stat_parts;
     }
-    echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 2px; text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br /><table border="1">';
-    echo '<tr><th>Datei</th><th>'.$produce_consume.'</th><th>von</th><th>bis</th><th>Peak</th><th>um</th>';
+    echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br /><table border="1">';
+    echo '<tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
     foreach($files as $key => $file) {
-        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td>".($chart_stats[$file][1] ? $chart_stats[$file][1].' Wh' : '')."</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td>".($chart_stats[$file][4] ? $chart_stats[$file][4].' W' : '')."</td><td>{$chart_stats[$file][5]}</td></tr>";
+        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td></tr>";
     }
     echo '</table></body></html>';
 } else {
