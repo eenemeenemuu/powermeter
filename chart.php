@@ -206,7 +206,7 @@ if (!isset($_GET['file'])) {
         $i_str = $i < 10 ? '0'.$i.':59' : $i.':59';
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
-    echo '</select>';
+    echo '</select> | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
     echo '</form></body></html>';
 }
 //EOF
