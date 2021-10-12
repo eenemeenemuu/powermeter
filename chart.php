@@ -19,6 +19,10 @@ if (isset($_GET['today'])) {
     header("Location: chart.php?file={$files[0]}");
 }
 
+if (isset($_GET['yesterday'])) {
+    header("Location: chart.php?file={$files[1]}");
+}
+
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
 
 if (!isset($_GET['file'])) {

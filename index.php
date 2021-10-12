@@ -18,7 +18,7 @@ if (isset($stats[3])) {
 
 echo '<html><head><title>'.$stats[2].' W '.$temp_title.'['.$stats[1].' '.$stats[0].']</title><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" /><meta http-equiv="refresh" content="'.$refresh_rate.'" /></head><body>';
 echo 'Aktuelle Leistung: '.$stats[2].' W<br />'.$temp_body.'Uhrzeit: '.$stats[1].'<br /> Datum: '.$stats[0];
-echo '<br />'.$produce_consume.': <a href="chart.php?today">Heute</a> | <a href="chart.php">Übersicht</a>';
+echo '<br />'.$produce_consume.': <a href="chart.php?today">Heute</a> | <a href="chart.php?yesterday">Gestern</a> | <a href="chart.php">Übersicht</a>';
 echo '</body></html>';
 
 //EOF
