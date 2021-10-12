@@ -32,7 +32,7 @@ if (!isset($_GET['file'])) {
     }
     echo '</body></html>';
 } else {
-    $res = $_GET['res'] ? $_GET['res'] : 5;
+    $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
     if ($t1 > $t2) {

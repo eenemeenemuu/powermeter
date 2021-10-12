@@ -13,7 +13,10 @@ $pass = ''; // password
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
 $log_rate = 6; // how often should data be gathered per minute
 $use_cache = false; // use latest data from log file to display power on index.php; can also be disabled dynamically with parameter 'nocache'
+
+// chart configuration
 $fix_axis_y = 0; // fix chart to specific value, set to 0 to calculate automatically
+$res = 5; // resolution of data in minutes; possible options: 1, 5, 10, 15, 20, 30, 45, 60; set to -1 to display all data (total consumption not available for this option).
 
 // additional logging configuration
 $host_external = 'https://example.com/my_folder/'; // additional external host for logging and display - must end with trailing slash (/)! - keep empty or comment out to disable
