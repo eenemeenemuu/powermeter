@@ -180,8 +180,7 @@ if (!isset($_GET['file'])) {
         }
     });
     </script>";
-    echo $produce_consume.' von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'];
-    echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
+    echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.' von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
     foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
