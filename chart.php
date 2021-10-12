@@ -62,23 +62,31 @@ if (!isset($_GET['file'])) {
         }
         $wh = 0;
         $dataPoints = array();
-        //for ($h = 0; $h < 24; $h++) {
         for ($h = $t1; $h <= $t2; $h++) {
             for ($m = 0; $m < 60; $m = $m + $res) {
-                $i = 0;
-                $hm = 0;
+                $p_res = array();
+                $p_m = array();
                 $y = 0;
                 foreach($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
-                        $hm += $value['p'];
-                        $i++;
+                        $p_res[] = $value['p'];
+                        if ($res != 1) {
+                            $p_m[$value['m']][] = $value['p'];
+                        }
                     }
                 }
-                if ($i) {
-                    $y = round($hm / $i);
-                    $wh += $hm / $i / 60 * $res;
+                if (count($p_res)) {
+                    $sum = array_sum($p_res);
+                    $count = count($p_res);
+                    $y = round($sum / $count);
+                    if ($res == 1) {
+                        $wh += $sum / $count / 60;
+                    } else {
+                        foreach ($p_m as $p_array) {
+                            $wh += array_sum($p_array) / count($p_array) / 60;
+                        }
+                    }
                 }
-                //$y = $i == 0 ? 0 : round($hm / $i);
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
             }
         }
