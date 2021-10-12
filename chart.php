@@ -18,7 +18,7 @@ function power_stats($value) {
 $i = 0;
 $files = array();
 foreach(scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
-    if ($file == '.' || $file == '..' || $file == 'stats.txt') {
+    if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv') {
         continue;
     }
     if (isset($_GET['file']) && $file == $_GET['file'].'.csv') {
@@ -39,11 +39,16 @@ if (isset($_GET['yesterday'])) {
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
 
 if (!isset($_GET['file'])) {
-    echo '<title>'.$produce_consume.'sübersicht</title></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br />';
-    foreach($files as $key => $file) {
-        echo "<a href=\"?file=$file\">$file</a><br />";
+    foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
+        $stat_parts = explode(',', $line);
+        $chart_stats[$stat_parts[0]] = $stat_parts;
     }
-    echo '</body></html>';
+    echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 2px; text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br /><table border="1">';
+    echo '<tr><th>Datei</th><th>'.$produce_consume.'</th><th>von</th><th>bis</th><th>Peak</th><th>um</th>';
+    foreach($files as $key => $file) {
+        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td>".($chart_stats[$file][1] ? $chart_stats[$file][1].' Wh' : '')."</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td>".($chart_stats[$file][4] ? $chart_stats[$file][4].' W' : '')."</td><td>{$chart_stats[$file][5]}</td></tr>";
+    }
+    echo '</table></body></html>';
 } else {
     $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
@@ -107,12 +112,26 @@ if (!isset($_GET['file'])) {
             }
         }
         if ($wh) {
+            $wh = round($wh);
             $date .= ' ('.$produce_consume.': '.round($wh).' Wh)';
         }
     }
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
+    if ($pos > 0 && $t1 == 0 && $t2 == 23) {
+        $save = true;
+        foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
+            $stat_parts = explode(',', $line);
+            if ($stat_parts[0] == $files[$pos]) {
+                $save = false;
+                break;
+            }
+        }
+        if ($save) {
+            file_put_contents($log_file_dir.'chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n", FILE_APPEND);
+        }
+    }
 
     $get_fix = trim($_GET['fix']);
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
