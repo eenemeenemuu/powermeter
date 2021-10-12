@@ -2,19 +2,6 @@
 
 require('config.inc.php');
 
-function power_stats($value) {
-    global $power_stats;
-    if (!$power_stats['first'] && $value['p']) {
-        $power_stats['first'] = $value;
-    }
-    if ($value['p']) {
-        $power_stats['last'] = $value;
-    }
-    if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
-        $power_stats['peak'] = $value;
-    }
-}
-
 $i = 0;
 $files = array();
 foreach(scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
@@ -50,6 +37,18 @@ if (!isset($_GET['file'])) {
     }
     echo '</table></body></html>';
 } else {
+    function power_stats($value) {
+        global $power_stats;
+        if (!$power_stats['first'] && $value['p']) {
+            $power_stats['first'] = $value;
+        }
+        if ($value['p']) {
+            $power_stats['last'] = $value;
+        }
+        if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
+            $power_stats['peak'] = $value;
+        }
+    }
     $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
