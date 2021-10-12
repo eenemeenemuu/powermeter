@@ -2,6 +2,19 @@
 
 require('config.inc.php');
 
+function power_stats($value) {
+    global $power_stats;
+    if (!$power_stats['first'] && $value['p']) {
+        $power_stats['first'] = $value;
+    }
+    if ($value['p']) {
+        $power_stats['last'] = $value;
+    }
+    if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
+        $power_stats['peak'] = $value;
+    }
+}
+
 $i = 0;
 $files = array();
 foreach(scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
@@ -42,6 +55,7 @@ if (!isset($_GET['file'])) {
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
     $data = array();
+    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
     if ($res == -1) {
         foreach ($lines as $line) {
             $data_this = explode(",", $line);
@@ -52,6 +66,7 @@ if (!isset($_GET['file'])) {
         foreach($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
+                power_stats($value);
             }
         }
     } else {
@@ -73,6 +88,7 @@ if (!isset($_GET['file'])) {
                         if ($res != 1) {
                             $p_m[$value['m']][] = $value['p'];
                         }
+                        power_stats($value);
                     }
                 }
                 if (count($p_res)) {
@@ -94,6 +110,10 @@ if (!isset($_GET['file'])) {
             $date .= ' ('.$produce_consume.': '.round($wh).' Wh)';
         }
     }
+    $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
+    $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
+    $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
+
     $get_fix = trim($_GET['fix']);
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
     if ($fix_axis_y) {
@@ -142,6 +162,7 @@ if (!isset($_GET['file'])) {
         }
     });
     </script>";
+    echo $produce_consume.' von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'];
     echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
     foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
