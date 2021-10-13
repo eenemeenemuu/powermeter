@@ -55,6 +55,11 @@ if (!isset($_GET['file'])) {
     if ($t1 > $t2) {
         $t1 = $t2;
     }
+    if (isset($_GET['yolo'])) {
+        $res = -1;
+        $t1 = 0;
+        $t2 = 23;
+    }
     $data = file_get_contents($log_file_dir.$files[$pos].'.csv');
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
@@ -72,6 +77,9 @@ if (!isset($_GET['file'])) {
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 power_stats($value);
             }
+        }
+        if (isset($_GET['yolo'])) {
+            header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
         }
     } else {
         foreach ($lines as $line) {
@@ -206,7 +214,9 @@ if (!isset($_GET['file'])) {
         $i_str = $i < 10 ? '0'.$i.':59' : $i.':59';
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
-    echo '</select> | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
+    echo '</select>';
+    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
+    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&yolo">#yolo</a></button>';
     echo '</form></body></html>';
 }
 //EOF
