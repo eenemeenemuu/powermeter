@@ -52,4 +52,7 @@ If your server is located in your local network (LAN) you maybe want to access t
 1. Copy the application to your second web server.
 2. On your first web server, enter the URI of the application on your second web server to `$host_external` in `config.inc.php` and enter a random `$host_auth_key`. 
 3. On your second web server, make sure the `$host_auth_key` matches and set `$use_cache` to `true`.
-4. On your second web server, make sure the `$log_file_dir` exists and is writable. 
+4. On your second web server, make sure the `$log_file_dir` exists and is writable.
+
+## Favicon
+If you like, you can add a file favicon.png to the directory, which will be displayed in your browser.
