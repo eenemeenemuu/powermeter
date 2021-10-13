@@ -21,3 +21,26 @@ When viewing the chart, the statistics of past days are saved to `chart_stats.cs
 ```
 0 0 * * * curl https://<host name or ip address>/powermeter/chart.php?yesterday
 ```
+
+## Recommendation when using flash memory
+As flash memory (e.g. the SD card when using a Raspberry Pi) can endure only a relatively small number of write cycles you might consider to log your data elsewhere. If you have a hard disk attached to your server which runs 24/7 you should store your data there.
+
+In my personal setup the hard disk sleeps most of the time. Therefore I log the data on a ram disk and copy it once a day to the SD card and after a reboot back from the SD card to the ram disk.
+
+#### Creating a ram disk
+Open `/etc/fstab` and add a row like
+```
+tmpfs /home/pi/ramdisk tmpfs defaults,noatime 0 0
+```
+
+#### Copy the data from the ram disk to the SD card once a day
+Create a cronjob like
+```
+1 0 * * * cp -u /home/pi/ramdisk/* /home/pi/www/powermeter/data/
+```
+
+#### Copy the data from the SD card to the ram disk after a reboot
+Create a cronjob like
+```
+@reboot cp /home/pi/www/powermeter/data/* /home/pi/ramdisk/
+```
