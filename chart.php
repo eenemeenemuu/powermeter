@@ -120,7 +120,6 @@ if (!isset($_GET['file'])) {
         }
         if ($wh) {
             $wh = round($wh);
-            $date .= ' ('.$produce_consume.': '.round($wh).' Wh)';
         }
     }
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
@@ -145,7 +144,7 @@ if (!isset($_GET['file'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    echo '<title>'.$date.'</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script></head>
+    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script></head>
         <body><a href="?">Zurück zur Übersicht</a>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     echo '<div style="width: 100%; text-align: center">';
@@ -188,7 +187,7 @@ if (!isset($_GET['file'])) {
         }
     });
     </script>";
-    echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.' von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
+    echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
     foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
