@@ -4,7 +4,7 @@ require('config.inc.php');
 
 $i = 0;
 $files = array();
-foreach(scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
+foreach (scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
     if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv') {
         continue;
     }
@@ -32,7 +32,7 @@ if (!isset($_GET['file'])) {
     }
     echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br /><table border="1">';
     echo '<tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
-    foreach($files as $key => $file) {
+    foreach ($files as $key => $file) {
         echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td></tr>";
     }
     echo '</table></body></html>';
@@ -72,7 +72,7 @@ if (!isset($_GET['file'])) {
             $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
         }
         $dataPoints = array();
-        foreach($data as $value) {
+        foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 power_stats($value);
@@ -94,7 +94,7 @@ if (!isset($_GET['file'])) {
                 $p_res = array();
                 $p_m = array();
                 $y = 0;
-                foreach($data as $value) {
+                foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
                         $p_res[] = $value['p'];
                         if ($res != 1) {

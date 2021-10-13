@@ -2,8 +2,8 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-if(!is_dir($log_file_dir)) {
-    if(!mkdir($log_file_dir)) {
+if (!is_dir($log_file_dir)) {
+    if (!mkdir($log_file_dir)) {
         die('Failed to create log file directory.');
     }
 }
