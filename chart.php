@@ -67,19 +67,19 @@ if (!isset($_GET['file'])) {
     $wh = 0;
     $dataPoints = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
+    foreach ($lines as $line) {
+        $data_this = explode(",", $line);
+        $time_parts = explode(":", $data_this[1]);
+        $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+    }
     if ($res == -1) {
-        foreach ($lines as $line) {
-            $data_this = explode(",", $line);
-            $time_parts = explode(":", $data_this[1]);
-            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
-        }
         $last_p = 0;
         $last_timestamp = 0;
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 if ($last_p) {
-                    $wh += $last_p * (mktime($value['h'], $value['m'], $value['s']) - $last_timestamp)/ 60 / 60;
+                    $wh += $last_p * (mktime($value['h'], $value['m'], $value['s']) - $last_timestamp) / 60 / 60;
                 }
                 $last_p = $value['p'];
                 $last_timestamp = mktime($value['h'], $value['m'], $value['s']);
@@ -90,11 +90,6 @@ if (!isset($_GET['file'])) {
             header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
         }
     } else {
-        foreach ($lines as $line) {
-            $data_this = explode(",", $line);
-            $time_parts = explode(":", $data_this[1]);
-            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
-        }
         for ($h = $t1; $h <= $t2; $h++) {
             for ($m = 0; $m < 60; $m = $m + $res) {
                 $p_res = array();
