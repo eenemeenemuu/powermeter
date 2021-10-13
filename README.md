@@ -2,16 +2,16 @@
 This application was created to monitor the output of my mini photovoltaic system (aka "Balkonkraftwerk"), but it can also be used to monitor other consumers. It currently supports the Tasmota firmware and AVM FRITZ!Box in conjunction with a FRITZ!DECT 200 or 210.
 
 ## Requirements
-Web server with PHP and access to your energy meter (i.e. Raspberry Pi)
+Web server with PHP and access to your energy meter (e.g. Raspberry Pi).
 
 ## Installation
-1. Rename config.inc.sample to config.inc.php
-2. Open config.inc.php and configure it to your needs (everything is documented in that file)
-3. Upload all files to your web server
+1. Rename `config.inc.sample` to `config.inc.php`
+2. Open `config.inc.php` and configure it to your needs (everything is documented in that file)
+3. Upload all files to your web server - create a folder if needed
 4. Access the application with your web browser
 
 ## Data logging
-To record the activity over the day you need to create a cronjob which calls log.php every minute. Like this:
+To record the activity over the day you need to create a cronjob which calls `log.php` every minute, like
 ```
 * * * * * curl https://<host name or ip address>/powermeter/log.php
 ```
