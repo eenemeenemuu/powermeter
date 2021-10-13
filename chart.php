@@ -144,18 +144,19 @@ if (!isset($_GET['file'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script></head>
-        <body><a href="?">Zurück zur Übersicht</a>';
+    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script>';
+    echo '<script>document.onkeydown = function(e) { if (!e) { e = window.event; } if (e.which) { kcode = e.which; } else if (e.keyCode) { kcode = e.keyCode; } if (kcode == 33) { document.getElementById("next").click(); } if (kcode == 34) { document.getElementById("prev").click(); } };</script>';
+    echo '</head><body><a href="?">Zurück zur Übersicht</a>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     echo '<div style="width: 100%; text-align: center">';
     if ($pos < count($files)-1) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos+1].$params.'">&laquo;</a></button> ';
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="prev" href="?file='.$files[$pos+1].$params.'">&laquo;</a></button> ';
     } else {
         echo '&laquo';
     }
     echo " $date ";
     if ($pos > 0) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos-1].$params.'">&raquo;</a></button>';
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="next" href="?file='.$files[$pos-1].$params.'">&raquo;</a></button>';
     } else {
         echo '&raquo;';
     }
