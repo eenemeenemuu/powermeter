@@ -60,13 +60,12 @@ if (!isset($_GET['file'])) {
         $t1 = 0;
         $t2 = 23;
     }
-    $data = file_get_contents($log_file_dir.$files[$pos].'.csv');
-    $lines = explode("\n", $data);
+    $lines = explode("\n", file_get_contents($log_file_dir.$files[$pos].'.csv'));
     $date = substr($lines[0], 0, 10);
-    $data = array();
     $wh = 0;
     $dataPoints = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
+    $data = array();
     foreach ($lines as $line) {
         $data_this = explode(",", $line);
         $time_parts = explode(":", $data_this[1]);
@@ -137,7 +136,6 @@ if (!isset($_GET['file'])) {
             file_put_contents($log_file_dir.'chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n", FILE_APPEND);
         }
     }
-
     $get_fix = trim($_GET['fix']);
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
     if ($fix_axis_y) {
