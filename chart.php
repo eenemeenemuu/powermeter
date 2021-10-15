@@ -180,6 +180,7 @@ if (!isset($_GET['file'])) {
         $min = min($dataPoints_t) - 1;
         $max = max($dataPoints_t) + 1;
         $t_dataset = ",{
+                label: 'Temperatur',
                 yAxisID: 'y_t',
                 data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                 fill: false,
@@ -196,6 +197,7 @@ if (!isset($_GET['file'])) {
         type: 'line',
         data: {
             datasets: [{
+                label: 'Leistung',
                 yAxisID: 'y_p',
                 data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -203,6 +205,7 @@ if (!isset($_GET['file'])) {
                 backgroundColor: [ 'rgba(109, 120, 173, 0.7)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
             },{
+                label: '$produce_consume',
                 yAxisID: 'y_wh',
                 data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -211,7 +214,7 @@ if (!isset($_GET['file'])) {
         },
         options: {
             plugins: {
-                legend: { display: false },
+                legend: { display: true },
                 tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } } },
             scales: { 
                 y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
