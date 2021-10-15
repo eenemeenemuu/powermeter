@@ -64,12 +64,17 @@ if (!isset($_GET['file'])) {
     $date = substr($lines[0], 0, 10);
     $wh = 0;
     $dataPoints = array();
+    $dataPoints_t = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
     $data = array();
     foreach ($lines as $line) {
         $data_this = explode(",", $line);
         $time_parts = explode(":", $data_this[1]);
-        $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+        if ($display_temp && isset($data_this[3])) {
+            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
+        } else {
+            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+        }
     }
     if ($res == -1) {
         $last_p = 0;
@@ -81,6 +86,9 @@ if (!isset($_GET['file'])) {
                 }
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 $dataPoints_wh[] = round($wh);
+                if (isset($value['t'])) {
+                    $dataPoints_t[] = $value['t'];
+                }
                 $last_p = $value['p'];
                 $last_timestamp = mktime($value['h'], $value['m'], $value['s']);
                 power_stats($value);
@@ -94,12 +102,16 @@ if (!isset($_GET['file'])) {
             for ($m = 0; $m < 60; $m = $m + $res) {
                 $p_res = array();
                 $p_m = array();
+                $t_res = array();
                 $y = 0;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
                         $p_res[] = $value['p'];
                         if ($res != 1) {
                             $p_m[$value['m']][] = $value['p'];
+                        }
+                        if (isset($value['t'])) {
+                            $t_res[] = $value['t'];
                         }
                         power_stats($value);
                     }
@@ -118,6 +130,9 @@ if (!isset($_GET['file'])) {
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
                 $dataPoints_wh[] = round($wh);
+                if (count($t_res)) {
+                    $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
+                }
             }
         }
     }
@@ -161,6 +176,19 @@ if (!isset($_GET['file'])) {
         echo '&raquo;';
     }
     echo '</div>';
+    if ($display_temp && count($dataPoints_t)) {
+        $min = min($dataPoints_t) - 1;
+        $max = max($dataPoints_t) + 1;
+        $t_dataset = ",{
+                yAxisID: 'y_t',
+                data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
+                fill: false,
+                borderWidth: 2,
+                borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
+            }";
+        $t_tooltip = "else if (context.datasetIndex === 2) { return context.parsed.y + ' °C'; }";
+        $t_scale = "y_t: { position: 'right', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
+    }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
     var ctx = document.getElementById('myChart');
@@ -179,15 +207,16 @@ if (!isset($_GET['file'])) {
                 data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-            }]
+            }$t_dataset]
         },
         options: {
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } } } } },
+                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } } },
             scales: { 
                 y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
                 y_wh: { position: 'right', suggestedMin: 0,$axisY_max_wh ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
+                $t_scale
             },
             elements: { point: { radius: 0, hitRadius: 50 } },
             maintainAspectRatio: false,
