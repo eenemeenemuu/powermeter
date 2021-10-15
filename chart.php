@@ -219,7 +219,7 @@ if (!isset($_GET['file'])) {
             },
             scales: { 
                 y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
-                y_wh: { position: 'right', suggestedMin: 0,$axisY_max_wh ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
+                y_wh: { display: false, suggestedMin: 0,$axisY_max_wh },
                 $t_scale
             },
             elements: { point: { radius: 0, hitRadius: 50 } },
