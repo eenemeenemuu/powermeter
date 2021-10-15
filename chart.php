@@ -76,10 +76,11 @@ if (!isset($_GET['file'])) {
         $last_timestamp = 0;
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 if ($last_p) {
                     $wh += $last_p * (mktime($value['h'], $value['m'], $value['s']) - $last_timestamp) / 60 / 60;
                 }
+                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
+                $dataPoints_wh[] = round($wh);
                 $last_p = $value['p'];
                 $last_timestamp = mktime($value['h'], $value['m'], $value['s']);
                 power_stats($value);
@@ -116,6 +117,7 @@ if (!isset($_GET['file'])) {
                     }
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
+                $dataPoints_wh[] = round($wh);
             }
         }
     }
@@ -140,6 +142,7 @@ if (!isset($_GET['file'])) {
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
+        $axisY_max_wh = " max: ".($fix_axis_y * 6).",";
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="'.dirname($_SERVER['REQUEST_URI']).'/chart.min.js"></script>';
     echo '<script>document.onkeydown = function(e) { if (!e) { e = window.event; } if (e.which) { kcode = e.which; } else if (e.keyCode) { kcode = e.keyCode; } if (kcode == 33) { document.getElementById("next").click(); } if (kcode == 34) { document.getElementById("prev").click(); } };</script>';
@@ -165,19 +168,27 @@ if (!isset($_GET['file'])) {
         type: 'line',
         data: {
             datasets: [{
+                yAxisID: 'y_p',
                 data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                 fill: true,
+                borderWidth: 2,
                 backgroundColor: [ 'rgba(109, 120, 173, 0.7)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
+            },{
+                yAxisID: 'y_wh',
+                data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
+                fill: true,
                 borderWidth: 2,
             }]
         },
         options: {
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' W'; } } }
+                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } } } } },
+            scales: { 
+                y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
+                y_wh: { position: 'right', suggestedMin: 0,$axisY_max_wh ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
             },
-            scales: { y: { suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } } },
             elements: { point: { radius: 0, hitRadius: 50 } },
             maintainAspectRatio: false,
             animation: false,
