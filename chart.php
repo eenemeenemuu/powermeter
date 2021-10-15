@@ -215,7 +215,8 @@ if (!isset($_GET['file'])) {
         options: {
             plugins: {
                 legend: { display: true },
-                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } } },
+                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } }
+            },
             scales: { 
                 y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
                 y_wh: { position: 'right', suggestedMin: 0,$axisY_max_wh ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
