@@ -129,7 +129,9 @@ if (!isset($_GET['file'])) {
                     }
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
-                $dataPoints_wh[] = round($wh);
+                if (count($p_res)) {
+                    $dataPoints_wh[] = round($wh);
+                }
                 if (count($t_res)) {
                     $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
                 }
@@ -218,7 +220,7 @@ if (!isset($_GET['file'])) {
                 tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } }
             },
             scales: { 
-                y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } }, 
+                y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
                 y_wh: { display: false, suggestedMin: 0,$axisY_max_wh },
                 $t_scale
             },
