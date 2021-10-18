@@ -36,7 +36,7 @@ tmpfs /home/pi/ramdisk tmpfs defaults,noatime 0 0
 #### Copy the data from the ram disk to the flash memory card once a day
 Create a cronjob like
 ```
-1 0 * * * cp -u /home/pi/ramdisk/* /home/pi/www/powermeter/data/
+0 0 * * * cp -u /home/pi/ramdisk/* /home/pi/www/powermeter/data/
 ```
 
 #### Copy the data from the flash memory to the ram disk after a reboot
