@@ -55,4 +55,4 @@ If your server is located in your local network (LAN) you maybe want to access t
 4. On your second web server, make sure the `$log_file_dir` exists and is writable.
 
 ## Favicon
-If you like, you can add a file favicon.png to the application's root directory, which will be displayed in your browser.
+If you like, you can add a file "favicon.png" to the application's root directory, which will be displayed in your browser.
