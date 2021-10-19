@@ -82,7 +82,11 @@ if (!isset($_GET['file'])) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 if ($last_p) {
-                    $wh += $last_p * (mktime($value['h'], $value['m'], $value['s']) - $last_timestamp) / 60 / 60;
+                    $now = mktime($value['h'], $value['m'], $value['s']);
+                    if ($now - $last_timestamp < 100) {
+                        // only calculate if the values are not too far apart in time
+                        $wh += $last_p * ($now - $last_timestamp) / 60 / 60;
+                    }
                 }
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 $dataPoints_wh[] = round($wh);
@@ -131,6 +135,8 @@ if (!isset($_GET['file'])) {
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
                 if (count($p_res)) {
                     $dataPoints_wh[] = round($wh);
+                } else {
+                    $dataPoints_wh[] = '';
                 }
                 if (count($t_res)) {
                     $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
