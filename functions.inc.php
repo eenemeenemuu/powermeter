@@ -1,11 +1,11 @@
 <?php
 
-function GetSessionId ($user, $pass) { 
+function GetSessionId ($user, $pass) {
     global $host;
     $text = file_get_contents('http://'.$host.'/login_sid.lua');
     preg_match('/<SID>(.*)<\/SID>/', $text, $match);
     $sid = $match[1];
-    if ($sid == "0000000000000000") { 
+    if ($sid == "0000000000000000") {
         preg_match('/<Challenge>(.*)<\/Challenge>/', $text, $match);
         $challenge = $match[1];
         $text = file_get_contents('http://'.$host.'/login_sid.lua?username='.$user.'&response='.$challenge."-".md5(mb_convert_encoding($challenge."-".$pass, 'UTF-16LE', 'UTF-8')));
@@ -19,9 +19,9 @@ function GetSessionId ($user, $pass) {
 function GetStats() {
     global $device, $host;
     if ($device == 'fritzbox') {
-        global $user, $pass;
+        global $user, $pass, $ain;
         $time = time();
-        $stats = file_get_contents('http://'.$host.'/webservices/homeautoswitch.lua?ain=11657 0502713&switchcmd=getbasicdevicestats&sid='.GetSessionId($user, $pass));
+        $stats = file_get_contents('http://'.$host.'/webservices/homeautoswitch.lua?ain='.$ain.'&switchcmd=getbasicdevicestats&sid='.GetSessionId($user, $pass));
         $stats_array = array();
         if ($stats) {
             $stats_array['date'] = date("d.m.Y", $time);

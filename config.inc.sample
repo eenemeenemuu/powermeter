@@ -8,6 +8,7 @@ $refresh_rate = 2; // refresh rate of index.php in seconds
 // additional configuration for fritzbox
 $user = ''; // user name
 $pass = ''; // password
+$ain = ''; // "Aktor Identifikationsnummer (AIN)", on your FRITZ!Box go to "Heimnetz > Smart Home" and edit your device to get the AIN
 
 // logging configuration
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
