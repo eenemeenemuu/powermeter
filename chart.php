@@ -169,8 +169,12 @@ if (!isset($_GET['file'])) {
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="chart.min.js"></script>';
     echo '<script>document.onkeydown = function(e) { if (!e) { e = window.event; } if (e.which) { kcode = e.which; } else if (e.keyCode) { kcode = e.keyCode; } if (kcode == 33) { document.getElementById("next").click(); } if (kcode == 34) { document.getElementById("prev").click(); } };</script>';
-    echo '</head><body><a href="?">Zurück zur Übersicht</a>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
+    if ($_GET['refresh']) {
+        echo '<meta http-equiv="refresh" content="60" />';
+        $params .= '&refresh=on';
+    }
+    echo '</head><body><a href="?">Zurück zur Übersicht</a>';
     echo '<div style="width: 100%; text-align: center">';
     if ($pos < count($files)-1) {
         echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="prev" href="?file='.$files[$pos+1].$params.'">&laquo;</a></button> ';
@@ -264,6 +268,10 @@ if (!isset($_GET['file'])) {
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
+    if ($pos === 0) {
+        $checked = $_GET['refresh'] ? ' checked="checked"' : '';
+        echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
+    }
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&yolo">#yolo</a></button>';
     echo '</form></body></html>';
