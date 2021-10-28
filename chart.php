@@ -162,7 +162,7 @@ if (!isset($_GET['file'])) {
         }
     }
     $get_fix = trim($_GET['fix']);
-    $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? $get_fix : $fix_axis_y;
+    $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
         $axisY_max_wh = " max: ".($fix_axis_y * 6).",";
