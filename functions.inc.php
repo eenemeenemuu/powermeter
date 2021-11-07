@@ -19,6 +19,9 @@ function GetSessionId ($user, $pass) {
 function GetStats() {
     global $device, $host;
     if ($device == 'fritzbox') {
+        if (!function_exists('mb_convert_encoding')) {
+            die('PHP function "mb_convert_encoding" does not exist! Try <tt>sudo apt update && sudo apt install -y php-mbstring</tt> to install.');
+        }
         global $user, $pass, $ain;
         $time = time();
         $stats = file_get_contents('http://'.$host.'/webservices/homeautoswitch.lua?ain='.$ain.'&switchcmd=getbasicdevicestats&sid='.GetSessionId($user, $pass));
