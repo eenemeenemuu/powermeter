@@ -11,7 +11,7 @@ function ajax_update() {
                 document.getElementById('temp').innerHTML = data[3];
                 temp_title = '/ ' + data[3] + ' °C ';
             }
-            document.title = data[2] + ' W ' + temp_title + '[' + data[1] + ' ' + data[0];
+            document.title = data[2] + ' W ' + temp_title + '[' + data[1] + ' ' + data[0] + ']';
         }
     };
     xhttp.open("GET", "index.php?ajax", true);
