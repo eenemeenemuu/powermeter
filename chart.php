@@ -4,7 +4,7 @@ require('config.inc.php');
 
 $i = 0;
 $files = array();
-foreach (scandir($log_file_dir,  SCANDIR_SORT_DESCENDING) as $file) {
+foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
     if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv') {
         continue;
     }
@@ -55,7 +55,7 @@ if (!isset($_GET['file'])) {
     if ($t1 > $t2) {
         $t1 = $t2;
     }
-    if (isset($_GET['yolo'])) {
+    if (isset($_GET['max']) || isset($_GET['follow'])) {
         $res = -1;
         $t1 = 0;
         $t2 = 23;
@@ -98,8 +98,11 @@ if (!isset($_GET['file'])) {
                 power_stats($value);
             }
         }
-        if (isset($_GET['yolo'])) {
+        if (isset($_GET['max'])) {
             header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
+        }
+        if (isset($_GET['follow'])) {
+            header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
         }
     } else {
         for ($h = $t1; $h <= $t2; $h++) {
@@ -271,9 +274,10 @@ if (!isset($_GET['file'])) {
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
+        echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&follow">#follow</a></button>';
     }
+    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&max">#max</a></button>';
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
-    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&yolo">#yolo</a></button>';
     echo '</form></body></html>';
 }
 //EOF
