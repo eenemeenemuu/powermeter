@@ -171,7 +171,7 @@ if (!isset($_GET['file'])) {
     echo '<script>document.onkeydown = function(e) { if (!e) { e = window.event; } if (e.which) { kcode = e.which; } else if (e.keyCode) { kcode = e.keyCode; } if (kcode == 33) { document.getElementById("next").click(); } if (kcode == 34) { document.getElementById("prev").click(); } };</script>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     if ($_GET['refresh']) {
-        echo '<meta http-equiv="refresh" content="60" />';
+        echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $params .= '&refresh=on';
     }
     echo '</head><body><a href="?">Zurück zur Übersicht</a>';
