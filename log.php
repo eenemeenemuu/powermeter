@@ -22,7 +22,7 @@ if ($_GET['stats']) {
 } else {
     for ($i = 0; $i < $log_rate; $i++) {
         $stats = GetStats();
-        if ($stats) {
+        if ($stats[0] != 'error') {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];

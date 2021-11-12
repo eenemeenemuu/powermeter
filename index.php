@@ -3,10 +3,15 @@ require('config.inc.php');
 
 if (!$use_cache || isset($_GET['nocache'])) {
     require('functions.inc.php');
+    $stats_array = GetStats();
+    if ($stats_array[0] == 'error') {
+        die($stats_array[1]);
+    }
     $stats = array();
-    foreach (GetStats() as $value) {
+    foreach ($stats_array as $value) {
         $stats[] = $value;
     }
+
 } else {
     $stats = explode (',', file_get_contents($log_file_dir.'stats.txt'));
 }

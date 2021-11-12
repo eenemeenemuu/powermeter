@@ -20,7 +20,7 @@ function GetStats() {
     global $device, $host;
     if ($device == 'fritzbox') {
         if (!function_exists('mb_convert_encoding')) {
-            die('PHP function "mb_convert_encoding" does not exist! Try <tt>sudo apt update && sudo apt install -y php-mbstring</tt> to install.');
+            return (array('error', 'PHP function "mb_convert_encoding" does not exist! Try <tt>sudo apt update && sudo apt install -y php-mbstring</tt> to install.'));
         }
         global $user, $pass, $ain;
         $time = time();
@@ -38,9 +38,13 @@ function GetStats() {
             $temp = $match[1];
             $stats_array['temp'] = round($temp/10);
 
+            if (!count($match)) {
+                return (array('error', 'FRITZ!DECT seems to be offline, please check.'));
+            }
+
             return $stats_array;
         } else {
-            return false;
+            return (array('error', 'Unable to get stats. Please check host, username and password and ain configuration.'));
         }
     } elseif ($device == 'tasmota') {
         $obj = json_decode(file_get_contents('http://'.$host.'/cm?cmnd=Status%208'));
@@ -50,11 +54,11 @@ function GetStats() {
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = $obj->StatusSNS->ENERGY->Power;
             return $stats_array;
-        }  else {
-            return false;
+        } else {
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered.'));
         }
     } else {
-        die('wrong device configured');
+        return (array('error', 'Invalid device configured.'));
     }
 }
 
