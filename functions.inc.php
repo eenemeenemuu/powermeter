@@ -30,6 +30,10 @@ function GetStats() {
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
 
+            if (!preg_match('/<voltage><stats count="[0-9]+" grid="[0-9]+">([0-9]+),/', $stats)) {
+                return (array('error', 'FRITZ!DECT seems to be offline, please check.'));
+            }
+
             preg_match('/<power><stats count="[0-9]+" grid="[0-9]+">([0-9]+),/', $stats, $match);
             $power = $match[1];
             $stats_array['power'] = round($power/100);
@@ -37,10 +41,6 @@ function GetStats() {
             preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+">([\-0-9]+),/', $stats, $match);
             $temp = $match[1];
             $stats_array['temp'] = round($temp/10);
-
-            if (!count($match)) {
-                return (array('error', 'FRITZ!DECT seems to be offline, please check.'));
-            }
 
             return $stats_array;
         } else {
