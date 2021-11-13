@@ -34,7 +34,7 @@ function GetStats() {
             $power = $match[1];
             $stats_array['power'] = round($power/100);
 
-            preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+">([0-9]+),/', $stats, $match);
+            preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+">([\-0-9]+),/', $stats, $match);
             $temp = $match[1];
             $stats_array['temp'] = round($temp/10);
 
