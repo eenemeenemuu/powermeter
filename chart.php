@@ -65,7 +65,9 @@ if (!isset($_GET['file'])) {
     $wh = 0;
     $dataPoints = array();
     $dataPoints_t = array();
+    $dataPoints_wh = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
+    $temp_measured = false;
     $data = array();
     foreach ($lines as $line) {
         $data_this = explode(",", $line);
@@ -91,6 +93,7 @@ if (!isset($_GET['file'])) {
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 $dataPoints_wh[] = round($wh);
                 if (isset($value['t'])) {
+                    $temp_measured = true;
                     $dataPoints_t[] = $value['t'];
                 }
                 $last_p = $value['p'];
@@ -110,7 +113,7 @@ if (!isset($_GET['file'])) {
                 $p_res = array();
                 $p_m = array();
                 $t_res = array();
-                $y = 0;
+                $y = NULL;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
                         $p_res[] = $value['p'];
@@ -139,10 +142,13 @@ if (!isset($_GET['file'])) {
                 if (count($p_res)) {
                     $dataPoints_wh[] = round($wh);
                 } else {
-                    $dataPoints_wh[] = '';
+                    $dataPoints_wh[] = NULL;
                 }
                 if (count($t_res)) {
+                    $temp_measured = true;
                     $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
+                } else {
+                    $dataPoints_t[] = NULL;
                 }
             }
         }
@@ -191,7 +197,7 @@ if (!isset($_GET['file'])) {
         echo '&raquo;';
     }
     echo '</div>';
-    if ($display_temp && count($dataPoints_t)) {
+    if ($display_temp && $temp_measured) {
         $min = min($dataPoints_t) - 1;
         $max = max($dataPoints_t) + 1;
         $t_dataset = ",{
