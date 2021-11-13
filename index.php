@@ -11,7 +11,6 @@ if (!$use_cache || isset($_GET['nocache'])) {
     foreach ($stats_array as $value) {
         $stats[] = $value;
     }
-
 } else {
     $stats = explode (',', file_get_contents($log_file_dir.'stats.txt'));
 }
