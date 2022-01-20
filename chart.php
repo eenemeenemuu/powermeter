@@ -209,7 +209,7 @@ if (!isset($_GET['file'])) {
                 borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
             }";
         $t_tooltip = "else if (context.datasetIndex === 2) { return context.parsed.y + ' °C'; }";
-        $t_scale = "y_t: { position: 'right', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
+        $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
     }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
@@ -239,7 +239,7 @@ if (!isset($_GET['file'])) {
                 tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } }
             },
             scales: { 
-                y_p: { position: 'left', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
+                y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
                 y_wh: { display: false, suggestedMin: 0,$axisY_max_wh },
                 $t_scale
             },
