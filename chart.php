@@ -28,10 +28,30 @@ echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta h
 if (!isset($_GET['file'])) {
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
         $stat_parts = explode(',', $line);
-        $chart_stats[$stat_parts[0]] = $stat_parts;
+        if ($stat_parts[0]) {
+            $chart_stats[$stat_parts[0]] = $stat_parts;
+            $date_parts = explode('-', $stat_parts[0]);
+            $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
+        }
     }
-    echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br /><table border="1">';
-    echo '<tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+    echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br />';
+
+    asort($chart_stats_month);
+    echo '<table border="1"><tr><th colspan="13">'.$produce_consume.' pro Monat in kWh</th></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th>';
+    foreach ($chart_stats_month as $year => $months) {
+        echo '<tr><td><strong>'.$year.'</strong></td>';
+        $month_array = array('01' => '', '02' => '', '03' => '', '04' => '', '05' => '', '06' => '', '07' => '', '08' => '', '09' => '', '10' => '', '11' => '', '12' => '');
+        foreach ($months as $month => $value) {
+            $month_array[$month] = $value;
+        }
+        foreach ($month_array as $value) {
+            echo '<td>'.($value ? round($value/1000, 2) : '-').'</td>';
+        }
+        echo '</tr>';
+    }
+    echo '</table><br />';
+
+    echo '<table border="1"><tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
     foreach ($files as $key => $file) {
         echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td></tr>";
     }
