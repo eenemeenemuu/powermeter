@@ -190,7 +190,7 @@ if (!isset($_GET['file'])) {
     } else {
         echo '&laquo';
     }
-    echo " <a href=\"{$log_file_dir}{$files[$pos]}.csv\" title=\"Daten Herunterladen\">{$date}</a> ";
+    echo " <a href=\"{$log_file_dir}{$files[$pos]}.csv\" title=\"Daten herunterladen\">{$date}</a> ";
     if ($pos > 0) {
         echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="next" href="?file='.$files[$pos-1].$params.'">&raquo;</a></button>';
     } else {
