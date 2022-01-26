@@ -34,9 +34,21 @@ if (!isset($_GET['file'])) {
             $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
         }
     }
+    asort($chart_stats_month);
+
+    $power_details_max_count = 0;
+    if ($power_details_resolution) {
+        foreach (explode("\n", file_get_contents($log_file_dir.'chart_details_'.$power_details_resolution.'.csv')) as $line) {
+            $stat_parts = explode(',', $line);
+            if ($stat_parts[0]) {
+                $power_details[$stat_parts[0]] = unserialize(substr($line, 11));
+                $power_details_max_count = max(count($power_details[$stat_parts[0]]), $power_details_max_count);
+            }
+        }
+    }
+
     echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br />';
 
-    asort($chart_stats_month);
     echo '<table border="1"><tr><th colspan="14">'.$produce_consume.' pro Monat in kWh</th></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
     foreach ($chart_stats_month as $year => $months) {
         echo '<tr><td><strong>'.$year.'</strong></td>';
@@ -55,8 +67,16 @@ if (!isset($_GET['file'])) {
     echo '</table><br />';
 
     echo '<table border="1"><tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+    for ($i = 0; $i < $power_details_max_count; $i++) {
+        echo '<th>&gt; '.$i * $power_details_resolution.' W</th>';
+    }
+    echo '</tr>';
     foreach ($files as $key => $file) {
-        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td></tr>";
+        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td>";
+        for ($i = 0; $i < $power_details_max_count; $i++) {
+            echo '<td>'.$power_details[$file][$i * $power_details_resolution].'</td>';
+        }
+        echo '</tr>';
     }
     echo '</table></body></html>';
 } else {
@@ -223,7 +243,7 @@ if (!isset($_GET['file'])) {
     if ($pos > 0 && $t1 == 0 && $t2 == 23) {
         save_stats('chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n");
         if ($power_details) {
-            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos].','.json_encode($power_details)."\n");
+            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos].','.serialize($power_details)."\n");
         }
     }
     $get_fix = trim($_GET['fix']);
