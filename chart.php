@@ -5,7 +5,7 @@ require('config.inc.php');
 $i = 0;
 $files = array();
 foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
-    if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv') {
+    if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_') {
         continue;
     }
     if (isset($_GET['file']) && $file == $_GET['file'].'.csv') {
@@ -72,6 +72,22 @@ if (!isset($_GET['file'])) {
             $power_stats['peak'] = $value;
         }
     }
+    function power_details($value) {
+        global $power_details, $power_details_resolution;
+        if ($power_details_resolution) {
+            if ($power_details['last_p']) {
+                $now = mktime($value['h'], $value['m'], $value['s']);
+                if ($now - $power_details['last_timestamp'] < 100) {
+                    // only calculate if the values are not too far apart in time
+                    for ($i = 0; $i <= $power_details['last_p']; $i += $power_details_resolution) {
+                        $power_details[$i + $power_details_resolution] += $now - $power_details['last_timestamp'];
+                    }
+                }
+            }
+            $power_details['last_p'] = $value['p'];
+            $power_details['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
+        }
+    }
     $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
@@ -90,6 +106,7 @@ if (!isset($_GET['file'])) {
     $dataPoints_t = array();
     $dataPoints_wh = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
+    $power_details = array();
     $temp_measured = false;
     $data = array();
     foreach ($lines as $line) {
@@ -122,6 +139,7 @@ if (!isset($_GET['file'])) {
                 $last_p = $value['p'];
                 $last_timestamp = mktime($value['h'], $value['m'], $value['s']);
                 power_stats($value);
+                power_details($value);
             }
         }
         if (isset($_GET['max'])) {
@@ -147,6 +165,7 @@ if (!isset($_GET['file'])) {
                             $t_res[] = $value['t'];
                         }
                         power_stats($value);
+                        power_details($value);
                     }
                 }
                 if (count($p_res)) {
@@ -180,17 +199,31 @@ if (!isset($_GET['file'])) {
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
-    if ($pos > 0 && $t1 == 0 && $t2 == 23) {
+    unset($power_details['last_p']);
+    unset($power_details['last_timestamp']);
+    foreach($power_details as $key => $value) {
+        $power_details[$key] = gmdate("H:i:s", $value);
+    }
+    function save_stats($file, $data) {
+        global $log_file_dir, $files, $pos;
         $save = true;
-        foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
-            $stat_parts = explode(',', $line);
-            if ($stat_parts[0] == $files[$pos]) {
-                $save = false;
-                break;
+        if (file_exists($log_file_dir.$file)) {
+            foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
+                $stat_parts = explode(',', $line);
+                if ($stat_parts[0] == $files[$pos]) {
+                    $save = false;
+                    break;
+                }
             }
         }
         if ($save) {
-            file_put_contents($log_file_dir.'chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n", FILE_APPEND);
+            file_put_contents($log_file_dir.$file, $data, FILE_APPEND);
+        }
+    }
+    if ($pos > 0 && $t1 == 0 && $t2 == 23) {
+        save_stats('chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n");
+        if ($power_details) {
+            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos].','.json_encode($power_details)."\n");
         }
     }
     $get_fix = trim($_GET['fix']);
@@ -307,6 +340,9 @@ if (!isset($_GET['file'])) {
     }
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&max">#max</a></button>';
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
-    echo '</form></body></html>';
+    echo '<table border="1" style="border: 1px solid black; border-collapse: collapse;"><tr><th colspan="'.count($power_details).'">Leistungsdauer</th></tr>';
+    echo '<tr><th>&lt;= '.implode(' W</th><th>&lt;= ', array_keys($power_details)).' W</th></tr>';
+    echo '<tr><td>'.implode('</td><td>', $power_details).'</td></tr>';
+    echo '</table></form></body></html>';
 }
 //EOF
