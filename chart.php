@@ -49,7 +49,7 @@ if (!isset($_GET['file'])) {
         foreach ($month_array as $value) {
             echo '<td>'.($value ? round($value/1000, 2) : '-').'</td>';
         }
-        echo '<td>'.($year_sum ? round($year_sum/1000, 2) : '-').'</td>';
+        echo '<td><strong>'.($year_sum ? round($year_sum/1000, 2) : '-').'</strong></td>';
         echo '</tr>';
     }
     echo '</table><br />';
