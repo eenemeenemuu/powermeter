@@ -80,7 +80,7 @@ if (!isset($_GET['file'])) {
                 if ($now - $power_details['last_timestamp'] < 100) {
                     // only calculate if the values are not too far apart in time
                     for ($i = 0; $i <= $power_details['last_p']; $i += $power_details_resolution) {
-                        $power_details[$i + $power_details_resolution] += $now - $power_details['last_timestamp'];
+                        $power_details[$i] += $now - $power_details['last_timestamp'];
                     }
                 }
             }
@@ -341,7 +341,7 @@ if (!isset($_GET['file'])) {
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&max">#max</a></button>';
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
     echo '<table border="1" style="border: 1px solid black; border-collapse: collapse;"><tr><th colspan="'.count($power_details).'">Leistungsdauer</th></tr>';
-    echo '<tr><th>&lt;= '.implode(' W</th><th>&lt;= ', array_keys($power_details)).' W</th></tr>';
+    echo '<tr><th>&gt; '.implode(' W</th><th>&gt; ', array_keys($power_details)).' W</th></tr>';
     echo '<tr><td>'.implode('</td><td>', $power_details).'</td></tr>';
     echo '</table></form></body></html>';
 }
