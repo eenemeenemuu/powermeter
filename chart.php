@@ -37,16 +37,19 @@ if (!isset($_GET['file'])) {
     echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; }</style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br />';
 
     asort($chart_stats_month);
-    echo '<table border="1"><tr><th colspan="13">'.$produce_consume.' pro Monat in kWh</th></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th>';
+    echo '<table border="1"><tr><th colspan="14">'.$produce_consume.' pro Monat in kWh</th></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
     foreach ($chart_stats_month as $year => $months) {
         echo '<tr><td><strong>'.$year.'</strong></td>';
         $month_array = array('01' => '', '02' => '', '03' => '', '04' => '', '05' => '', '06' => '', '07' => '', '08' => '', '09' => '', '10' => '', '11' => '', '12' => '');
+        $year_sum = 0;
         foreach ($months as $month => $value) {
             $month_array[$month] = $value;
+            $year_sum += $value;
         }
         foreach ($month_array as $value) {
             echo '<td>'.($value ? round($value/1000, 2) : '-').'</td>';
         }
+        echo '<td>'.($year_sum ? round($year_sum/1000, 2) : '-').'</td>';
         echo '</tr>';
     }
     echo '</table><br />';
