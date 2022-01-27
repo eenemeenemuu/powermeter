@@ -361,7 +361,7 @@ if (!isset($_GET['file'])) {
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&max">#max</a></button>';
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
     if ($power_details_resolution) {
-        echo '<table border="1" style="border: 1px solid black; border-collapse: collapse;"><tr><th colspan="'.count($power_details).'">Leistungsdauer</th></tr>';
+        echo '<table border="1" style="border: 1px solid black; border-collapse: collapse;"><tr><th colspan="'.count($power_details).'">Leistungsdetails</th></tr>';
         echo '<tr><th>&gt; '.implode(' W</th><th>&gt; ', array_keys($power_details)).' W</th></tr>';
         echo '<tr><td>'.implode('</td><td>', $power_details).'</td></tr></table>';
     }
