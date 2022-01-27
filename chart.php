@@ -47,6 +47,7 @@ if (!isset($_GET['file'])) {
         }
     }
 
+    echo '<link rel="stylesheet" href="tablesort.css"><script src="tablesort.min.js"></script><script src="tablesort.number.min.js"></script>';
     echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body><a href=".">Zurück zur aktuellen Leistungsanzeige</a><br /><br />';
 
     echo '<table border="1"><tr><td colspan="14" align="center">'.$produce_consume.' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
@@ -66,11 +67,11 @@ if (!isset($_GET['file'])) {
     }
     echo '</table><br />';
 
-    echo '<table border="1"><tr><th>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+    echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
     for ($i = 0; $i < $power_details_max_count; $i++) {
         echo '<th>&gt; '.$i * $power_details_resolution.' W</th>';
     }
-    echo '</tr>';
+    echo '</tr></thead><tbody>';
     foreach ($files as $key => $file) {
         echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td>";
         for ($i = 0; $i < $power_details_max_count; $i++) {
@@ -78,7 +79,7 @@ if (!isset($_GET['file'])) {
         }
         echo '</tr>';
     }
-    echo '</table></body></html>';
+    echo '</tbody></table><script>new Tablesort(document.getElementById(\'daily\'), { descending: true });</script></body></html>';
 } else {
     function power_stats($value) {
         global $power_stats;
