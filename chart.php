@@ -42,6 +42,7 @@ if (!isset($_GET['file'])) {
             $stat_parts = explode(',', $line);
             if ($stat_parts[0]) {
                 $power_details[$stat_parts[0]] = unserialize(substr($line, 11));
+                $power_details[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
                 $power_details_max_count = max(count($power_details[$stat_parts[0]]), $power_details_max_count);
             }
         }
