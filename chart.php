@@ -252,7 +252,7 @@ if (!isset($_GET['file'])) {
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
-        $axisY_max_wh = " max: ".($fix_axis_y * 6).",";
+        $axisY_max_wh = " max: ".($fix_axis_y * 8).",";
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="chart.min.js"></script>';
     echo '<script>document.onkeydown = function(e) { if (!e) { e = window.event; } if (e.which) { kcode = e.which; } else if (e.keyCode) { kcode = e.keyCode; } if (kcode == 33) { document.getElementById("next").click(); } if (kcode == 34) { document.getElementById("prev").click(); } };</script>';
