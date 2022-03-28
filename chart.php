@@ -34,7 +34,7 @@ if (!isset($_GET['file'])) {
             $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
         }
     }
-    asort($chart_stats_month);
+    asort($chart_stats_month, SORT_NUMERIC);
 
     $power_details_max_count = 0;
     if ($power_details_resolution) {
