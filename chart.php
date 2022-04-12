@@ -8,19 +8,19 @@ foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
     if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_') {
         continue;
     }
-    if (isset($_GET['file']) && $file == $_GET['file'].'.csv') {
+    if (isset($_GET['file']) && $file == $_GET['file']) {
         $pos = $i;
     }
     $i++;
-    $files[] = substr($file, 0, -4);
+    $files[] = array('date' => substr($file, 0, strpos($file, '.')), 'name' => $file);
 }
 
 if (isset($_GET['today'])) {
-    header("Location: chart.php?file={$files[0]}");
+    header("Location: chart.php?file={$files[0]['name']}");
 }
 
 if (isset($_GET['yesterday'])) {
-    header("Location: chart.php?file={$files[1]}");
+    header("Location: chart.php?file={$files[1]['name']}");
 }
 
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
@@ -74,9 +74,9 @@ if (!isset($_GET['file'])) {
     }
     echo '</tr></thead><tbody>';
     foreach ($files as $key => $file) {
-        echo "<tr><td><a href=\"?file=$file\">$file</a></td><td class=\"v\">{$chart_stats[$file][1]}</td><td>{$chart_stats[$file][2]}</td><td>{$chart_stats[$file][3]}</td><td class=\"v\">{$chart_stats[$file][4]}</td><td>{$chart_stats[$file][5]}</td>";
+        echo "<tr><td><a href=\"?file={$file['name']}\">{$file['date']}</a></td><td class=\"v\">{$chart_stats[$file['date']][1]}</td><td>{$chart_stats[$file['date']][2]}</td><td>{$chart_stats[$file['date']][3]}</td><td class=\"v\">{$chart_stats[$file['date']][4]}</td><td>{$chart_stats[$file['date']][5]}</td>";
         for ($i = 0; $i < $power_details_max_count; $i++) {
-            echo '<td>'.$power_details[$file][$i * $power_details_resolution].'</td>';
+            echo '<td>'.$power_details[$file['date']][$i * $power_details_resolution].'</td>';
         }
         echo '</tr>';
     }
@@ -110,6 +110,21 @@ if (!isset($_GET['file'])) {
             $power_details['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
         }
     }
+    function compress_file($file, $data) {
+        global $log_file_dir;
+        if (function_exists('gzencode')) {
+            $data = implode("\n", $data);
+            $gzdata = gzencode($data, 7);
+            if ($gzdata) {
+                if (file_put_contents($log_file_dir.$file.'.gz', $gzdata)) {
+                    if (unlink($log_file_dir.$file)) {
+                        return $file.'.gz';
+                    }
+                }
+            }
+        }
+        return $file;
+    }
     $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
@@ -121,7 +136,13 @@ if (!isset($_GET['file'])) {
         $t1 = 0;
         $t2 = 23;
     }
-    $lines = explode("\n", file_get_contents($log_file_dir.$files[$pos].'.csv'));
+    $data = file_get_contents($log_file_dir.$files[$pos]['name']);
+    $file_is_compressed = false;
+    if (strpos($files[$pos]['name'], '.gz') !== FALSE) {
+        $file_is_compressed = true;
+        $data = gzdecode($data);
+    }
+    $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
     $wh = 0;
     $dataPoints = array();
@@ -165,10 +186,10 @@ if (!isset($_GET['file'])) {
             }
         }
         if (isset($_GET['max'])) {
-            header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
+            header("Location: chart.php?file={$files[$pos]['name']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
         }
         if (isset($_GET['follow'])) {
-            header("Location: chart.php?file={$files[$pos]}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
+            header("Location: chart.php?file={$files[$pos]['name']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
         }
     } else {
         for ($h = $t1; $h <= $t2; $h++) {
@@ -232,7 +253,7 @@ if (!isset($_GET['file'])) {
         if (file_exists($log_file_dir.$file)) {
             foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
-                if ($stat_parts[0] == $files[$pos]) {
+                if ($stat_parts[0] == $files[$pos]['date']) {
                     $save = false;
                     break;
                 }
@@ -243,9 +264,12 @@ if (!isset($_GET['file'])) {
         }
     }
     if ($pos > 0 && $t1 == 0 && $t2 == 23) {
-        save_stats('chart_stats.csv', "{$files[$pos]},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n");
+        save_stats('chart_stats.csv', "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n");
         if ($power_details) {
-            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos].','.serialize($power_details)."\n");
+            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos]['date'].','.serialize($power_details)."\n");
+        }
+        if (!$file_is_compressed) {
+            $files[$pos]['name'] = compress_file($files[$pos]['name'], $lines);
         }
     }
     $get_fix = trim($_GET['fix']);
@@ -264,13 +288,13 @@ if (!isset($_GET['file'])) {
     echo '</head><body><a href="?">Zurück zur Übersicht</a>';
     echo '<div style="width: 100%; text-align: center">';
     if ($pos < count($files)-1) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="prev" href="?file='.$files[$pos+1].$params.'">&laquo;</a></button> ';
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="prev" href="?file='.$files[$pos+1]['name'].$params.'">&laquo;</a></button> ';
     } else {
         echo '&laquo';
     }
-    echo " <a href=\"{$log_file_dir}{$files[$pos]}.csv\" title=\"Daten herunterladen\">{$date}</a> ";
+    echo " <a href=\"{$log_file_dir}{$files[$pos]['name']}\" title=\"Daten herunterladen\">{$date}</a> ";
     if ($pos > 0) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="next" href="?file='.$files[$pos-1].$params.'">&raquo;</a></button>';
+        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="next" href="?file='.$files[$pos-1]['name'].$params.'">&raquo;</a></button>';
     } else {
         echo '&raquo;';
     }
@@ -358,10 +382,10 @@ if (!isset($_GET['file'])) {
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
-        echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&follow">#follow</a></button>';
+        echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'&follow">#follow</a></button>';
     }
-    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'&max">#max</a></button>';
-    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos].'">Reset</a></button>';
+    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'&max">#max</a></button>';
+    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'">Reset</a></button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div class="cell head">Leistungsdetails</div>';
