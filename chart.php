@@ -388,7 +388,7 @@ if (!isset($_GET['file'])) {
     echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'">Reset</a></button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
-        echo '<p></p><div class="cell head">Leistungsdetails</div>';
+        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div></div>';
         foreach ($power_details as $key => $value) {
             echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">&gt;'.($key ? '=' : '').' '.$key.' W</div><div class="cell">'.$value.'</div></div>';
         }
