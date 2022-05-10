@@ -44,7 +44,7 @@ function GetStats() {
 
             return $stats_array;
         } else {
-            return (array('error', 'Unable to get stats. Please check host, username and password and ain configuration.'));
+            return (array('error', 'Unable to get stats. Please check host, username, password and ain configuration. Go to <a href="chart.php">stats history</a>.'));
         }
     } elseif ($device == 'tasmota') {
         $obj = json_decode(file_get_contents('http://'.$host.'/cm?cmnd=Status%208'));
@@ -55,7 +55,7 @@ function GetStats() {
             $stats_array['power'] = $obj->StatusSNS->ENERGY->Power;
             return $stats_array;
         } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered.'));
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
     } else {
         return (array('error', 'Invalid device configured.'));
