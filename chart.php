@@ -284,20 +284,20 @@ if (!isset($_GET['file'])) {
         echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $params .= '&refresh=on';
     }
-    echo '</head><body><a href="?">Zurück zur Übersicht</a>';
-    echo '<div style="width: 100%; text-align: center">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="'.$log_file_dir.$files[$pos]['name'].'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '';
     if ($pos < count($files)-1) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="prev" href="?file='.$files[$pos+1]['name'].$params.'">&laquo;</a></button> ';
+        echo '<a id="prev" href="?file='.$files[$pos+1]['name'].$params.'" title="vorheriger Tag">⏪</a>';
     } else {
-        echo '&laquo';
+        echo '<span style="opacity: 0.3;">⏪</span>';
     }
-    echo " <a href=\"{$log_file_dir}{$files[$pos]['name']}\" title=\"Daten herunterladen\">{$date}</a> ";
+    echo " $date ";
     if ($pos > 0) {
-        echo '<button onclick="location.href=this.children[0].href" style="cursor: pointer"><a id="next" href="?file='.$files[$pos-1]['name'].$params.'">&raquo;</a></button>';
+        echo '<a id="next" href="?file='.$files[$pos-1]['name'].$params.'" title="nächster Tag">⏩</a>';
     } else {
-        echo '&raquo;';
+        echo '<span style="opacity: 0.3;">⏩</span>';
     }
-    echo '</div>';
+    echo '</div></div>';
     if ($display_temp && $temp_measured) {
         $min = min($dataPoints_t) - 1;
         $max = max($dataPoints_t) + 1;
