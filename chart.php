@@ -284,7 +284,7 @@ if (!isset($_GET['file'])) {
         echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $params .= '&refresh=on';
     }
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="'.$log_file_dir.$files[$pos]['name'].'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="'.$log_file_dir.$files[$pos]['name'].'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['name'].$params.'" title="vorheriger Tag">⏪</a>';
@@ -351,7 +351,7 @@ if (!isset($_GET['file'])) {
         }
     });
     </script>";
-    echo '<form method="get"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
     foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
@@ -380,11 +380,13 @@ if (!isset($_GET['file'])) {
     echo '</select>';
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
-        echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
-        echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'&follow">#follow</a></button>';
+        echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label></form>';
+        echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'&follow\'">#follow</button>';
+    } else {
+        echo '</form>';
     }
-    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'&max">#max</a></button>';
-    echo ' | <button onclick="location.href=this.children[0].href" style="cursor: pointer"><a href="?file='.$files[$pos]['name'].'">Reset</a></button>';
+    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'&max\'">#max</button>';
+    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'\'">Reset</button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div></div>';
@@ -392,6 +394,6 @@ if (!isset($_GET['file'])) {
             echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">&gt;'.($key ? '=' : '').' '.$key.' W</div><div class="cell">'.$value.'</div></div>';
         }
    }
-    echo '</form></body></html>';
+    echo '</body></html>';
 }
 //EOF
