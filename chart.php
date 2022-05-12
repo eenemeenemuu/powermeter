@@ -8,7 +8,7 @@ foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
     if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_') {
         continue;
     }
-    if (isset($_GET['file']) && $file == $_GET['file']) {
+    if (isset($_GET['file']) && ($file == $_GET['file'] || $file == $_GET['file'].'.csv' || $file == $_GET['file'].'.csv.gz' || $file == $_GET['file'].'.gz')) {
         $pos = $i;
     }
     $i++;
@@ -73,7 +73,7 @@ if (!isset($_GET['file'])) {
     }
     echo '</tr></thead><tbody>';
     foreach ($files as $key => $file) {
-        echo "<tr><td><a href=\"?file={$file['name']}\">{$file['date']}</a></td><td class=\"v\">{$chart_stats[$file['date']][1]}</td><td>{$chart_stats[$file['date']][2]}</td><td>{$chart_stats[$file['date']][3]}</td><td class=\"v\">{$chart_stats[$file['date']][4]}</td><td>{$chart_stats[$file['date']][5]}</td>";
+        echo "<tr><td><a href=\"?file={$file['date']}\">{$file['date']}</a></td><td class=\"v\">{$chart_stats[$file['date']][1]}</td><td>{$chart_stats[$file['date']][2]}</td><td>{$chart_stats[$file['date']][3]}</td><td class=\"v\">{$chart_stats[$file['date']][4]}</td><td>{$chart_stats[$file['date']][5]}</td>";
         for ($i = 0; $i < $power_details_max_count; $i++) {
             echo '<td>'.$power_details[$file['date']][$i * $power_details_resolution].'</td>';
         }
@@ -185,10 +185,10 @@ if (!isset($_GET['file'])) {
             }
         }
         if (isset($_GET['max'])) {
-            header("Location: chart.php?file={$files[$pos]['name']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
+            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
         }
         if (isset($_GET['follow'])) {
-            header("Location: chart.php?file={$files[$pos]['name']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
+            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
         }
     } else {
         for ($h = $t1; $h <= $t2; $h++) {
@@ -286,13 +286,13 @@ if (!isset($_GET['file'])) {
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="'.$log_file_dir.$files[$pos]['name'].'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
-        echo '<a id="prev" href="?file='.$files[$pos+1]['name'].$params.'" title="vorheriger Tag">⏪</a>';
+        echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
     } else {
         echo '<span style="opacity: 0.3;">⏪</span>';
     }
     echo " $date ";
     if ($pos > 0) {
-        echo '<a id="next" href="?file='.$files[$pos-1]['name'].$params.'" title="nächster Tag">⏩</a>';
+        echo '<a id="next" href="?file='.$files[$pos-1]['date'].$params.'" title="nächster Tag">⏩</a>';
     } else {
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
@@ -380,12 +380,12 @@ if (!isset($_GET['file'])) {
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label></form>';
-        echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'&follow\'">#follow</button>';
+        echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'&follow\'">#follow</button>';
     } else {
         echo '</form>';
     }
-    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'&max\'">#max</button>';
-    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['name'].'\'">Reset</button>';
+    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'&max\'">#max</button>';
+    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div></div>';
