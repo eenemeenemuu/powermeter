@@ -145,6 +145,14 @@ if (!isset($_GET['file'])) {
         $file_is_compressed = true;
         $data = gzdecode($data);
     }
+    if (isset($_GET['download'])) {
+        header('Content-type: text/csv');
+        header('Content-Disposition: attachment; filename="'.$files[$pos]['date'].'.csv"');
+        ob_clean();
+        flush();
+        echo $data;
+        die();
+    }
     $lines = explode("\n", $data);
     $date = substr($lines[0], 0, 10);
     $wh = 0;
@@ -287,7 +295,7 @@ if (!isset($_GET['file'])) {
         echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $params .= '&refresh=on';
     }
-    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="'.$log_file_dir.$files[$pos]['name'].'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="?" title="Zurück zur Übersicht">🏠</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
