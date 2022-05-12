@@ -141,7 +141,7 @@ if (!isset($_GET['file'])) {
     }
     $data = file_get_contents($log_file_dir.$files[$pos]['name']);
     $file_is_compressed = false;
-    if (strpos($files[$pos]['name'], '.gz') !== FALSE) {
+    if (strpos($files[$pos]['name'], '.gz') !== false) {
         $file_is_compressed = true;
         $data = gzdecode($data);
     }
@@ -200,7 +200,7 @@ if (!isset($_GET['file'])) {
                 $p_res = array();
                 $p_m = array();
                 $t_res = array();
-                $y = NULL;
+                $y = null;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
                         $p_res[] = $value['p'];
@@ -230,13 +230,13 @@ if (!isset($_GET['file'])) {
                 if (count($p_res)) {
                     $dataPoints_wh[] = round($wh);
                 } else {
-                    $dataPoints_wh[] = NULL;
+                    $dataPoints_wh[] = null;
                 }
                 if (count($t_res)) {
                     $temp_measured = true;
                     $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
                 } else {
-                    $dataPoints_t[] = NULL;
+                    $dataPoints_t[] = null;
                 }
             }
         }
