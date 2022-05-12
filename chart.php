@@ -3,6 +3,7 @@
 require('config.inc.php');
 
 $i = 0;
+$pos = false;
 $files = array();
 foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
     if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_') {
@@ -81,6 +82,9 @@ if (!isset($_GET['file'])) {
     }
     echo '</tbody></table><script>new Tablesort(document.getElementById(\'daily\'), { descending: true });</script></body></html>';
 } else {
+    if ($pos === false) {
+        die('Error: file not found: '.$_GET['file']);
+    }
     function power_stats($value) {
         global $power_stats;
         if (!$power_stats['first'] && $value['p']) {
