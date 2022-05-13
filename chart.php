@@ -363,6 +363,7 @@ if (!isset($_GET['file'])) {
     });
 
     window.addEventListener('swap', function(event) {
+        document.body.style.opacity = '0.3';
         if (event.detail.direction == 'left') {
             location.href = document.getElementById('next').href;
         }
