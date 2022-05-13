@@ -362,7 +362,7 @@ if (!isset($_GET['file'])) {
         }
     });
 
-    document.getElementById('chartContainer').addEventListener('swap', function(event) {
+    window.addEventListener('swap', function(event) {
         if (event.detail.direction == 'left') {
             location.href = document.getElementById('next').href;
         }
