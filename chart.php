@@ -289,7 +289,7 @@ if (!isset($_GET['file'])) {
         $axisY_max = " max: $fix_axis_y,";
         $axisY_max_wh = " max: ".($fix_axis_y * 8).",";
     }
-    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="chart.min.js"></script><script src="chart_keydown.js"></script>';
+    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="chart.min.js"></script><script src="chart_keydown.js"></script><script src="swipe.min.js"></script>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     if ($_GET['refresh']) {
         echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
@@ -361,6 +361,15 @@ if (!isset($_GET['file'])) {
             normalized: true,
         }
     });
+
+    document.getElementById('chartContainer').addEventListener('swap', function(event) {
+        if (event.detail.direction == 'left') {
+            location.href = document.getElementById('next').href;
+        }
+        if (event.detail.direction == 'right') {
+            location.href = document.getElementById('prev').href;
+        }
+    }, false);
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
     foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
