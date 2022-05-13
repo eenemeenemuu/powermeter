@@ -19,4 +19,10 @@ document.onkeydown = function(e) {
     if (kcode == 40) {
         document.getElementById("download").click();
     }
+    if (kcode == 33) {
+        document.getElementById("max").click();
+    }
+    if (kcode == 34) {
+        document.getElementById("reset").click();
+    }
 };

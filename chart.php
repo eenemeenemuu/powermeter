@@ -406,8 +406,8 @@ if (!isset($_GET['file'])) {
     } else {
         echo '</form>';
     }
-    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'&max\'">#max</button>';
-    echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
+    echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max\'">#max</button>';
+    echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div></div>';
