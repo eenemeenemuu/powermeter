@@ -83,7 +83,7 @@ if (!isset($_GET['file'])) {
     echo '</tbody></table><script>new Tablesort(document.getElementById(\'daily\'), { descending: true });</script></body></html>';
 } else {
     if ($pos === false) {
-        die('Error: file not found: '.$_GET['file']);
+        die('Error! File not found: '.htmlentities($_GET['file']));
     }
     function power_stats($value) {
         global $power_stats;
