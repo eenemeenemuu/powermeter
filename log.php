@@ -13,9 +13,17 @@ if (!file_put_contents($log_file_dir.'test', 'test')) {
     unlink($log_file_dir.'test');
 }
 
+function dupe_check($stats_string) {
+    global $log_file_dir;
+    if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
+        die();
+    }
+}
+
 if ($_GET['stats']) {
     if ($_GET['key'] == $host_auth_key) {
         $stats_string = urldecode(unserialize($_GET['stats']));
+        dupe_check($stats_string);
         file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
         file_put_contents($log_file_dir.'stats.txt', $stats_string);
     }
@@ -27,6 +35,7 @@ if ($_GET['stats']) {
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];
             }
+            dupe_check($stats_string);
             file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
             file_put_contents($log_file_dir.'stats.txt', $stats_string);
             if ($host_external) {
