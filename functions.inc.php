@@ -20,12 +20,12 @@ function GetStats() {
     global $device, $host;
     if ($device == 'fritzbox') {
         if (!function_exists('mb_convert_encoding')) {
-            return (array('error', 'PHP function "mb_convert_encoding" does not exist! Try <tt>sudo apt update && sudo apt install -y php-mbstring</tt> to install.'));
+            return ['error', 'PHP function "mb_convert_encoding" does not exist! Try sudo apt update && sudo apt install -y php-mbstring to install.'];
         }
         global $user, $pass, $ain;
         $time = time();
         $stats = file_get_contents('http://'.$host.'/webservices/homeautoswitch.lua?ain='.$ain.'&switchcmd=getbasicdevicestats&sid='.GetSessionId($user, $pass));
-        $stats_array = array();
+        $stats_array = [];
         if ($stats) {
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
@@ -57,7 +57,46 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
-    } else {
+    }elseif ($device == 'envtec') {
+        $id= "A3E0BD437BBC4CDB94711F3446B13ED9";
+        //TODO: Add to Config
+
+        $opts = ['http' =>
+            [
+                'method'  => 'POST',
+                'header'  => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n",
+            ]
+        ];
+
+        $context  = stream_context_create($opts);
+
+
+        $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22$id%22%7D";
+
+        $result = file_get_contents($url, false, $context);
+
+
+        $data = json_decode($result, true);
+
+        $power = 0.0 ;
+
+        foreach ($data['Data']['QueryResults'] as $result) {
+            $power += $result['POWER'];
+
+            $timeZone = new DateTimeZone('Europe/London');
+            $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $result['SITETIME'], $timeZone);;
+            $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
+            $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
+            $stats_array['temp'] = $result['TEMPERATUR'];
+        }
+
+
+        $stats_array['power'] = $power;
+
+
+        return $stats_array;
+
+    } else{
         return (array('error', 'Invalid device configured.'));
     }
 }
