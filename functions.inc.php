@@ -57,9 +57,8 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
-    }elseif ($device == 'envtec') {
-        $id= "A3E0BD437BBC4CDB94711F3446B13ED9";
-        //TODO: Add to Config
+    } elseif ($device == 'envtec') {
+        $id= "A3E0BD437BBC4CDB94711F3446B13ED9"; //TODO: Add to Config
 
         $opts = ['http' =>
             [
@@ -70,32 +69,22 @@ function GetStats() {
 
         $context  = stream_context_create($opts);
 
-
         $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22$id%22%7D";
 
         $result = file_get_contents($url, false, $context);
 
-
         $data = json_decode($result, true);
 
-        $power = 0.0 ;
-
         foreach ($data['Data']['QueryResults'] as $result) {
-            $power += $result['POWER'];
-
             $timeZone = new DateTimeZone('Europe/London');
             $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $result['SITETIME'], $timeZone);;
             $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
             $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
-            $stats_array['temp'] = $result['TEMPERATUR'];
+            $stats_array['power'] += $result['POWER'];
+            $stats_array['temp'] = round($result['TEMPERATURE']);
         }
-
-
-        $stats_array['power'] = $power;
-
-
+        $stats_array['power'] = round($stats_array['power']);
         return $stats_array;
-
     } else{
         return (array('error', 'Invalid device configured.'));
     }
