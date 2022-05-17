@@ -20,7 +20,7 @@ function GetStats() {
     global $device, $host;
     if ($device == 'fritzbox') {
         if (!function_exists('mb_convert_encoding')) {
-            return ['error', 'PHP function "mb_convert_encoding" does not exist! Try sudo apt update && sudo apt install -y php-mbstring to install.'];
+            return ['error', 'PHP function "mb_convert_encoding" does not exist! Try <code>sudo apt update && sudo apt install -y php-mbstring</code> to install.'];
         }
         global $user, $pass, $ain;
         $time = time();
