@@ -58,7 +58,7 @@ function GetStats() {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
     } elseif ($device == 'envtec') {
-        $id= "A3E0BD437BBC4CDB94711F3446B13ED9"; //TODO: Add to Config
+        global $station_id;
 
         $opts = ['http' =>
             [
@@ -69,7 +69,7 @@ function GetStats() {
 
         $context  = stream_context_create($opts);
 
-        $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22$id%22%7D";
+        $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22{$station_id}%22%7D";
 
         $result = file_get_contents($url, false, $context);
 

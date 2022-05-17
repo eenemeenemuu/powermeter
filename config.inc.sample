@@ -1,6 +1,6 @@
 <?php
 // basic configuration - mandatory
-$device = 'tasmota'; // possible options: fritzbox, tasmota
+$device = 'tasmota'; // possible options: fritzbox, tasmota, envtec
 $host = 'tasmotaplug4'; // host name or ip address
 $produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
 $refresh_rate = 2; // refresh rate of index.php in seconds
@@ -9,6 +9,9 @@ $refresh_rate = 2; // refresh rate of index.php in seconds
 $user = ''; // user name
 $pass = ''; // password
 $ain = ''; // "Aktor Identifikationsnummer (AIN)", on your FRITZ!Box go to "Heimnetz > Smart Home" and edit your device to get the AIN
+
+//additional configuration for Envertech Bridge
+$station_id = ''; // station ID
 
 // logging configuration
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
