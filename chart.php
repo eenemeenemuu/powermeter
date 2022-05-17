@@ -363,13 +363,13 @@ if (!isset($_GET['file'])) {
     });
 
     window.addEventListener('swap', function(event) {
-        document.body.style.opacity = '0.3';
         if (event.detail.direction == 'left') {
             location.href = document.getElementById('next').href;
         }
         if (event.detail.direction == 'right') {
             location.href = document.getElementById('prev').href;
         }
+        document.body.style.opacity = '0.3';
     }, false);
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
