@@ -153,7 +153,7 @@ if (!isset($_GET['file'])) {
         echo $data;
         die();
     }
-    $lines = explode("\n", $data);
+    $lines = array_unique(explode("\n", $data));
     $date = substr($lines[0], 0, 10);
     $wh = 0;
     $dataPoints = array();
