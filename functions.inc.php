@@ -60,36 +60,32 @@ function GetStats() {
     } elseif ($device == 'envtec') {
         global $station_id;
 
-        $opts = ['http' =>
-            [
-                'method'  => 'POST',
-                'header'  => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n",
-            ]
-        ];
-
+        $opts = ['http' => ['method'  => 'POST', 'header'  => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n" ]];
         $context  = stream_context_create($opts);
-
         $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22{$station_id}%22%7D";
-
         $result = file_get_contents($url, false, $context);
-        $data = json_decode($result, true);
 
         if (!$result) {
             return (array('error', 'Unable to query envertecportal.com. Go to <a href="chart.php">stats history</a>.'));
-        } elseif (!$data['Data']['QueryResults']) {
-            return (array('error', 'Unable to get stats. Please check station ID configuration. Go to <a href="chart.php">stats history</a>.'));
-        } else {
-            foreach ($data['Data']['QueryResults'] as $result) {
-                $timeZone = new DateTimeZone('Europe/London');
-                $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $result['SITETIME'], $timeZone);;
-                $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
-                $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
-                $stats_array['power'] += $result['POWER'];
-                $stats_array['temp'] = round($result['TEMPERATURE']);
-            }
-            $stats_array['power'] = round($stats_array['power']);
-            return $stats_array;
         }
+
+        $data = json_decode($result, true);
+
+        if (!$data['Data']['QueryResults']) {
+            return (array('error', 'Unable to get stats. Please check station ID configuration. Go to <a href="chart.php">stats history</a>.'));
+        }
+
+        foreach ($data['Data']['QueryResults'] as $result) {
+            $timeZone = new DateTimeZone('Europe/London');
+            $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $result['SITETIME'], $timeZone);;
+            $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
+            $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
+            $stats_array['power'] += $result['POWER'];
+            $stats_array['temp'] = round($result['TEMPERATURE']);
+        }
+        $stats_array['power'] = round($stats_array['power']);
+
+        return $stats_array;
     } else{
         return (array('error', 'Invalid device configured.'));
     }
