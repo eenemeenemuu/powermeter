@@ -76,12 +76,32 @@ function GetStats() {
         }
 
         foreach ($data['Data']['QueryResults'] as $result) {
-            $timeZone = new DateTimeZone('Europe/London');
-            $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $result['SITETIME'], $timeZone);;
-            $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
-            $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
-            $stats_array['power'] += $result['POWER'];
-            $stats_array['temp'] = round($result['TEMPERATURE']);
+            $data_timestamps[] = $result['SITETIME'];
+        }
+        $stats_timestamp = max($data_timestamps);
+
+        $skipped = 0;
+        foreach ($data['Data']['QueryResults'] as $result) {
+            if ($result['SITETIME'] != $stats_timestamp) {
+                // skip outdated (missing) data
+                $skipped++;
+            } else {
+                $stats_power[] = $result['POWER'];
+                $stats_temp[] = $result['TEMPERATURE'];
+            }
+        }
+
+        $timeZone = new DateTimeZone('Europe/London');
+        $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $stats_timestamp, $timeZone);;
+        $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
+        $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
+        $stats_array['power'] = array_sum($stats_power);
+        $stats_array['temp'] = round(array_sum($stats_temp)/count($stats_temp));
+
+        if ($skipped) {
+            // assume power of the skipped module is identical
+            $i = count($data['Data']['QueryResults']);
+            $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
         }
         $stats_array['power'] = round($stats_array['power']);
 
