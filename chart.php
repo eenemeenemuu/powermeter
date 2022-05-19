@@ -373,7 +373,7 @@ if (!isset($_GET['file'])) {
     }, false);
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select name="res" onchange="form.submit();">';
-    foreach (array('-1', '1', '5', '10', '15', '20', '30', '60') as $value) {
+    foreach (array('-1', '1', '2', '3', '4', '5', '6', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
             $text = 'Alle Messwerte anzeigen';
