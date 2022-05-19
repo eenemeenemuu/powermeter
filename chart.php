@@ -86,7 +86,7 @@ if (!isset($_GET['file'])) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
     function power_details($value) {
-        global $power_stats, $power_details, $power_details_resolution;
+        global $power_stats, $power_details, $power_details_resolution, $device;
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
         }
@@ -97,8 +97,9 @@ if (!isset($_GET['file'])) {
             $power_stats['peak'] = $value;
         }
         if ($power_details['last_p']) {
+            $limit = $device == 'envtec' ? 300 : 100;
             $now = mktime($value['h'], $value['m'], $value['s']);
-            if ($now - $power_details['last_timestamp'] < 100) {
+            if ($now - $power_details['last_timestamp'] < $limit) {
                 // only calculate if the values are not too far apart in time
                 if ($power_details_resolution) {
                     for ($i = 0; $i <= $power_details['last_p']; $i += $power_details_resolution) {
