@@ -85,8 +85,8 @@ if (!isset($_GET['file'])) {
     if ($pos === false) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
-    function power_stats($value) {
-        global $power_stats;
+    function power_details($value) {
+        global $power_stats, $power_details, $power_details_resolution;
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
         }
@@ -96,9 +96,6 @@ if (!isset($_GET['file'])) {
         if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
             $power_stats['peak'] = $value;
         }
-    }
-    function power_details($value) {
-        global $power_details, $power_details_resolution;
         if ($power_details['last_p']) {
             $now = mktime($value['h'], $value['m'], $value['s']);
             if ($now - $power_details['last_timestamp'] < 100) {
@@ -178,7 +175,6 @@ if (!isset($_GET['file'])) {
         $last_timestamp = 0;
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                power_stats($value);
                 power_details($value);
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
                 $dataPoints_wh[] = round($power_details['wh']);
@@ -206,7 +202,6 @@ if (!isset($_GET['file'])) {
                         if (isset($value['t'])) {
                             $t_res[] = $value['t'];
                         }
-                        power_stats($value);
                         power_details($value);
                     }
                 }
