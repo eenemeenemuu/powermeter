@@ -27,6 +27,27 @@ if (isset($_GET['yesterday'])) {
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
 
 if (!isset($_GET['file'])) {
+    if ($_GET['update'] == 'missing') {
+        foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
+            $stat_parts = explode(',', $line);
+            if ($stat_parts[0]) {
+                $chart_stats_file_content[] = $stat_parts[0];
+            }
+        }
+        foreach (explode("\n", file_get_contents($log_file_dir.'chart_details_'.$power_details_resolution.'.csv')) as $line) {
+            $stat_parts = explode(',', $line);
+            if ($stat_parts[0]) {
+                $chart_details_file_content[] = $stat_parts[0];
+            }
+        }
+        foreach($files as $file) {
+            if (!in_array($file['date'], $chart_stats_file_content) || !in_array($file['date'], $chart_details_file_content)) {
+                $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http';
+                file_get_contents($protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'?file='.$file['date']);
+            }
+        }
+    }
+
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
         $stat_parts = explode(',', $line);
         if ($stat_parts[0]) {
