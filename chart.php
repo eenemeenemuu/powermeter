@@ -85,7 +85,7 @@ if (!isset($_GET['file'])) {
     if ($pos === false) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
-    function power_details($value) {
+    function power_stats($value) {
         global $power_stats, $power_details, $power_details_resolution, $device;
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
@@ -96,21 +96,21 @@ if (!isset($_GET['file'])) {
         if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
             $power_stats['peak'] = $value;
         }
-        if ($power_details['last_p']) {
+        if ($power_stats['last_p']) {
             $limit = $device == 'envtec' ? 300 : 100;
             $now = mktime($value['h'], $value['m'], $value['s']);
-            if ($now - $power_details['last_timestamp'] < $limit) {
+            if ($now - $power_stats['last_timestamp'] < $limit) {
                 // only calculate if the values are not too far apart in time
                 if ($power_details_resolution) {
-                    for ($i = 0; $i <= $power_details['last_p']; $i += $power_details_resolution) {
+                    for ($i = 0; $i <= $power_stats['last_p']; $i += $power_details_resolution) {
                         $power_details[$i] += $now - $power_details['last_timestamp'];
                     }
                 }
-                $power_details['wh'] += $power_details['last_p'] * ($now - $power_details['last_timestamp']) / 60 / 60;
+                $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
             }
         }
-        $power_details['last_p'] = $value['p'];
-        $power_details['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
+        $power_stats['last_p'] = $value['p'];
+        $power_stats['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
     }
     function compress_file($file, $data) {
         global $log_file_dir;
@@ -176,9 +176,9 @@ if (!isset($_GET['file'])) {
         $last_timestamp = 0;
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                power_details($value);
+                power_stats($value);
                 $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
-                $dataPoints_wh[] = round($power_details['wh']);
+                $dataPoints_wh[] = round($power_stats['wh']);
                 if (isset($value['t'])) {
                     $temp_measured = true;
                     $dataPoints_t[] = $value['t'];
@@ -203,7 +203,7 @@ if (!isset($_GET['file'])) {
                         if (isset($value['t'])) {
                             $t_res[] = $value['t'];
                         }
-                        power_details($value);
+                        power_stats($value);
                     }
                 }
                 if (count($p_res)) {
@@ -211,7 +211,7 @@ if (!isset($_GET['file'])) {
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
                 if (count($p_res)) {
-                    $dataPoints_wh[] = round($power_details['wh']);
+                    $dataPoints_wh[] = round($power_stats['wh']);
                 } else {
                     $dataPoints_wh[] = null;
                 }
@@ -224,13 +224,10 @@ if (!isset($_GET['file'])) {
             }
         }
     }
-    $wh = round($power_details['wh']);
+    $wh = round($power_stats['wh']);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
-    unset($power_details['last_p']);
-    unset($power_details['last_timestamp']);
-    unset($power_details['wh']);
     foreach($power_details as $key => $value) {
         $power_details[$key] = gmdate("H:i:s", $value);
     }
