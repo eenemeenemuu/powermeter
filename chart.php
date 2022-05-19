@@ -124,7 +124,7 @@ if (!isset($_GET['file'])) {
                 // only calculate if the values are not too far apart in time
                 if ($power_details_resolution) {
                     for ($i = 0; $i <= $power_stats['last_p']; $i += $power_details_resolution) {
-                        $power_details[$i] += $now - $power_details['last_timestamp'];
+                        $power_details[$i] += $now - $power_stats['last_timestamp'];
                     }
                 }
                 $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
