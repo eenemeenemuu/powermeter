@@ -213,6 +213,9 @@ if (!isset($_GET['file'])) {
             header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
         }
     } else {
+        if ($t1 === 0) {
+            $t1 = '0';
+        }
         for ($h = $t1; $h <= $t2; $h++) {
             for ($m = 0; $m < 60; $m = $m + $res) {
                 $p_res = array();
