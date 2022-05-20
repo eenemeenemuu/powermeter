@@ -40,10 +40,10 @@ if (!isset($_GET['file'])) {
                 $chart_details_file_content[] = $stat_parts[0];
             }
         }
-        foreach($files as $file) {
-            if (!in_array($file['date'], $chart_stats_file_content) || !in_array($file['date'], $chart_details_file_content)) {
+        for ($i = count($files); $i >= 0; $i--) {
+            if (!in_array($files[$i]['date'], $chart_stats_file_content) || !in_array($files[$i]['date'], $chart_details_file_content)) {
                 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http';
-                file_get_contents($protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'?file='.$file['date']);
+                file_get_contents($protocol.'://'.$_SERVER['HTTP_HOST'].$_SERVER['PHP_SELF'].'?file='.$files[$i]['date']);
             }
         }
     }
