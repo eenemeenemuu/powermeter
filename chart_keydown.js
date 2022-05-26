@@ -25,4 +25,5 @@ document.onkeydown = function(e) {
     if (kcode == 34) {
         document.getElementById("reset").click();
     }
+    e.preventDefault();
 };
