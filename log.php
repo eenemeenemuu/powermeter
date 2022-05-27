@@ -54,9 +54,6 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
             file_put_contents($log_file_dir.'stats.txt', $stats_string);
             if ($host_external) {
-                $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
-                $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
-                $context = stream_context_create($opts);
                 if (file_get_contents($host_external.'log.php', false, create_context($stats_string)) === false) {
                     // Buffer data if external host is not available
                     file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
