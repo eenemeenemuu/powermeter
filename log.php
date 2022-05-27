@@ -20,9 +20,10 @@ function dupe_check($stats_string) {
     }
 }
 
-if ($_GET['stats']) {
-    if ($_GET['key'] == $host_auth_key) {
-        $stats_string = urldecode(unserialize($_GET['stats']));
+if (isset($_POST['stats']) || isset($_GET['stats'])) {
+    $key = isset($_POST['key']) ? $_POST['key'] : $_GET['key'];
+    if ($key == $host_auth_key) {
+        $stats_string = isset($_POST['stats']) ? $_POST['stats'] : urldecode(unserialize($_GET['stats']));
         dupe_check($stats_string);
         $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[0-9]{1,5}', '[\-0-9]{1,4}'];
         foreach (explode(",", $stats_string) as $stat) {
@@ -45,7 +46,10 @@ if ($_GET['stats']) {
             file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
             file_put_contents($log_file_dir.'stats.txt', $stats_string);
             if ($host_external) {
-                file_get_contents($host_external.'log.php?stats='.urlencode(serialize($stats_string)).'&key='.$host_auth_key);
+                $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
+                $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
+                $context = stream_context_create($opts);
+                file_get_contents($host_external.'log.php', false, $context);
             }
         }
         if ($log_rate > 1) {
