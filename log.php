@@ -20,6 +20,17 @@ function dupe_check($stats_string) {
     }
 }
 
+function put_contents_external($stats_string) {
+    global $host_auth_key, $host_external, $log_file_dir;
+    $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
+    $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
+    $context = stream_context_create($opts);
+    if (file_get_contents($host_external.'log.php', false, $context) === false) {
+        // Buffer data if external host is not available
+        file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
+    }
+}
+
 function create_context($stats_string) {
     global $host_auth_key;
     $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
@@ -54,10 +65,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
             file_put_contents($log_file_dir.'stats.txt', $stats_string);
             if ($host_external) {
-                if (file_get_contents($host_external.'log.php', false, create_context($stats_string)) === false) {
-                    // Buffer data if external host is not available
-                    file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
-                }
+                put_contents_external($stats_string);
             }
         }
         if ($log_rate > 1) {
@@ -73,10 +81,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         $lines = explode("\n", file_get_contents($log_file_dir.'buffer.txt'));
         unlink($log_file_dir.'buffer.txt');
         foreach ($lines as $stats_string) {
-            if (file_get_contents($host_external.'log.php', false, create_context($stats_string)) === false) {
-                // Buffer data if external host is not available
-                file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
-            }
+            put_contents_external($stats_string);
         }
     }
 }
