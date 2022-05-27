@@ -61,7 +61,7 @@ function GetStats() {
         global $station_id;
 
         $opts = ['http' => ['method'  => 'POST', 'header'  => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n" ]];
-        $context  = stream_context_create($opts);
+        $context = stream_context_create($opts);
         $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22{$station_id}%22%7D";
         $result = file_get_contents($url, false, $context);
 
@@ -99,14 +99,14 @@ function GetStats() {
         $stats_array['temp'] = round(array_sum($stats_temp)/count($stats_temp));
 
         if ($skipped) {
-            // assume power of the skipped module is identical
+            // assume power of the skipped modules are identical
             $i = count($data['Data']['QueryResults']);
             $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
         }
         $stats_array['power'] = round($stats_array['power']);
 
         return $stats_array;
-    } else{
+    } else {
         return (array('error', 'Invalid device configured.'));
     }
 }
