@@ -24,6 +24,12 @@ if ($_GET['stats']) {
     if ($_GET['key'] == $host_auth_key) {
         $stats_string = urldecode(unserialize($_GET['stats']));
         dupe_check($stats_string);
+        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[0-9]{1,5}', '[\-0-9]{1,4}'];
+        foreach (explode(",", $stats_string) as $stat) {
+            if (!preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
+                die();
+            }
+        }
         file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
         file_put_contents($log_file_dir.'stats.txt', $stats_string);
     }
