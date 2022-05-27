@@ -20,6 +20,14 @@ function dupe_check($stats_string) {
     }
 }
 
+function create_context($stats_string) {
+    global $host_auth_key;
+    $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
+    $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
+    $context = stream_context_create($opts);
+    return $context;
+}
+
 if (isset($_POST['stats']) || isset($_GET['stats'])) {
     $key = isset($_POST['key']) ? $_POST['key'] : $_GET['key'];
     if ($key == $host_auth_key) {
@@ -49,7 +57,10 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                 $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
                 $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
                 $context = stream_context_create($opts);
-                file_get_contents($host_external.'log.php', false, $context);
+                if (file_get_contents($host_external.'log.php', false, create_context($stats_string)) === false) {
+                    // Buffer data if external host is not available
+                    file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
+                }
             }
         }
         if ($log_rate > 1) {
@@ -57,6 +68,17 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                 sleep(60/$log_rate-1);
             } else {
                 sleep(60/$log_rate);
+            }
+        }
+    }
+    // Send buffered data to external host if it's available again
+    if (file_exists($log_file_dir.'buffer.txt') && file_get_contents($host_external.'log.php') !== false) {
+        $lines = explode("\n", file_get_contents($log_file_dir.'buffer.txt'));
+        unlink($log_file_dir.'buffer.txt');
+        foreach ($lines as $stats_string) {
+            if (file_get_contents($host_external.'log.php', false, create_context($stats_string)) === false) {
+                // Buffer data if external host is not available
+                file_put_contents($log_file_dir.'buffer.txt', $stats_string."\n", FILE_APPEND);
             }
         }
     }
