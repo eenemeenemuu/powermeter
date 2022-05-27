@@ -69,7 +69,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         }
     }
     // Send buffered data to external host if it's available again
-    if (file_exists($log_file_dir.'buffer.txt') && file_get_contents($host_external.'log.php') !== false) {
+    if ($host_external && file_exists($log_file_dir.'buffer.txt') && file_get_contents($host_external.'log.php') !== false) {
         $lines = explode("\n", file_get_contents($log_file_dir.'buffer.txt'));
         unlink($log_file_dir.'buffer.txt');
         foreach ($lines as $stats_string) {
