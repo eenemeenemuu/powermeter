@@ -265,7 +265,14 @@ if (!isset($_GET['file'])) {
             foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
                 if ($stat_parts[0] == $files[$pos]['date'] ) {
-                    $save = false;
+                    $line .= "\n";
+                    if ($line != $data) {
+                        $contents = file_get_contents($log_file_dir.$file);
+                        $contents = str_replace($line, '', $contents);
+                        file_put_contents($log_file_dir.$file, $contents);
+                    } else {
+                        $save = false;
+                    }
                     break;
                 }
             }
