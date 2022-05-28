@@ -50,6 +50,9 @@ function GetStats() {
         $obj = json_decode(file_get_contents('http://'.$host.'/cm?cmnd=Status%208'));
         if (is_int($obj->StatusSNS->ENERGY->Power)) {
             $time = strtotime($obj->StatusSNS->Time);
+            if ($time < 500000000) {
+                $time = time();
+            }
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = $obj->StatusSNS->ENERGY->Power;
