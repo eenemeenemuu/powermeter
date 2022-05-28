@@ -13,13 +13,6 @@ if (!file_put_contents($log_file_dir.'test', 'test')) {
     unlink($log_file_dir.'test');
 }
 
-function dupe_check($stats_string) {
-    global $log_file_dir;
-    if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
-        die();
-    }
-}
-
 function put_contents_external($stats_string) {
     global $host_auth_key, $host_external, $log_file_dir;
     $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
@@ -43,7 +36,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
     $key = isset($_POST['key']) ? $_POST['key'] : $_GET['key'];
     if ($key == $host_auth_key) {
         $stats_string = isset($_POST['stats']) ? $_POST['stats'] : urldecode(unserialize($_GET['stats']));
-        dupe_check($stats_string);
+        if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
+            die();
+        }
         $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[0-9]{1,5}', '[\-0-9]{1,4}'];
         foreach (explode(",", $stats_string) as $stat) {
             if (!preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
@@ -61,7 +56,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];
             }
-            dupe_check($stats_string);
+            if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
+                continue;
+            }
             file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
             file_put_contents($log_file_dir.'stats.txt', $stats_string);
             if ($host_external) {
