@@ -56,13 +56,12 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];
             }
-            if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
-                continue;
-            }
-            file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
-            file_put_contents($log_file_dir.'stats.txt', $stats_string);
-            if ($host_external) {
-                put_contents_external($stats_string);
+            if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
+                file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
+                file_put_contents($log_file_dir.'stats.txt', $stats_string);
+                if ($host_external) {
+                    put_contents_external($stats_string);
+                }
             }
         }
         if ($log_rate > 1) {
