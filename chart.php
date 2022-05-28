@@ -48,9 +48,14 @@ if (!isset($_GET['file'])) {
         }
     }
 
+    foreach ($files as $key => $file) {
+        $file_dates[] = $file['date'];
+    }
+    array_unique($file_dates);
+
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
         $stat_parts = explode(',', $line);
-        if ($stat_parts[0]) {
+        if ($stat_parts[0] && in_array($stat_parts[0], $file_dates)) {
             $chart_stats[$stat_parts[0]] = $stat_parts;
             $date_parts = explode('-', $stat_parts[0]);
             $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
@@ -62,7 +67,7 @@ if (!isset($_GET['file'])) {
     if ($power_details_resolution) {
         foreach (explode("\n", file_get_contents($log_file_dir.'chart_details_'.$power_details_resolution.'.csv')) as $line) {
             $stat_parts = explode(',', $line);
-            if ($stat_parts[0]) {
+            if ($stat_parts[0] && in_array($stat_parts[0], $file_dates)) {
                 $power_details[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
                 $power_details_max_count = max(count($power_details[$stat_parts[0]]), $power_details_max_count);
             }
@@ -94,10 +99,8 @@ if (!isset($_GET['file'])) {
         echo '<th>&gt; '.$i * $power_details_resolution.' W</th>';
     }
     echo '</tr></thead><tbody>';
-    foreach ($files as $key => $file) {
-        $file_dates[] = $file['date'];
-    }
-    foreach (array_unique($file_dates) as $date) {
+
+    foreach ($file_dates as $date) {
         echo "<tr><td><a href=\"?file={$date}\">{$date}</a></td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
         for ($i = 0; $i < $power_details_max_count; $i++) {
             echo '<td>'.$power_details[$date][$i * $power_details_resolution].'</td>';
