@@ -164,6 +164,9 @@ if (!isset($_GET['file'])) {
     if (strpos($files[$pos]['name'], '.gz') !== false) {
         $file_is_compressed = true;
         $data = gzdecode($data);
+    } elseif ($files[$pos]['date'] == $files[$pos-1]['date']) {
+        $data2 = file_get_contents($log_file_dir.$files[$pos-1]['name']);
+        $data .= gzdecode($data2);
     }
     if (isset($_GET['download'])) {
         header('Content-type: text/csv');
@@ -261,7 +264,7 @@ if (!isset($_GET['file'])) {
         if (file_exists($log_file_dir.$file)) {
             foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
-                if ($stat_parts[0] == $files[$pos]['date']) {
+                if ($stat_parts[0] == $files[$pos]['date'] ) {
                     $save = false;
                     break;
                 }
