@@ -50,6 +50,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
     }
 } else {
     for ($i = 0; $i < $log_rate; $i++) {
+        $get_stats_start = microtime(true);
         $stats = GetStats();
         if ($stats[0] != 'error') {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
@@ -65,11 +66,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             }
         }
         if ($log_rate > 1) {
-            if ($device == 'fritzbox') {
-                sleep(60/$log_rate-1);
-            } else {
-                sleep(60/$log_rate);
-            }
+            usleep(60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000));
         }
     }
     // Send buffered data to external host if it's available again
