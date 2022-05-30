@@ -193,12 +193,14 @@ if (!isset($_GET['file'])) {
     $temp_measured = false;
     $data = array();
     foreach ($lines as $line) {
-        $data_this = explode(",", $line);
-        $time_parts = explode(":", $data_this[1]);
-        if ($display_temp && isset($data_this[3])) {
-            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
-        } else {
-            $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+        if (trim($line)) {
+            $data_this = explode(",", $line);
+            $time_parts = explode(":", $data_this[1]);
+            if ($display_temp && isset($data_this[3])) {
+                $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
+            } else {
+                $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+            }
         }
     }
     if ($res == -1) {
