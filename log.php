@@ -66,7 +66,10 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             }
         }
         if ($log_rate > 1) {
-            usleep(60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000));
+            $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
+            if ($microseconds > 0) {
+                usleep($microseconds);
+            }
         }
     }
     // Send buffered data to external host if it's available again
