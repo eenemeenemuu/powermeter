@@ -65,7 +65,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                 }
             }
         }
-        if ($log_rate > 1) {
+        if ($log_rate > 1 && $i < $log_rate-1) {
             $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
             if ($microseconds > 0) {
                 usleep($microseconds);
