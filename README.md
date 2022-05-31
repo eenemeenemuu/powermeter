@@ -1,5 +1,5 @@
 # Power meter
-This application was created to monitor the output of my mini photovoltaic system (aka "Balkonkraftwerk"), but it can also be used to monitor other consumers. It currently supports the Tasmota firmware and AVM FRITZ!Box in conjunction with a FRITZ!DECT 200 or 210.
+This application was created to monitor the output of my mini photovoltaic system (aka "Balkonkraftwerk"), but it can also be used to monitor other consumers. It currently supports the Tasmota firmware and AVM FRITZ!Box in conjunction with a FRITZ!DECT 200 or 210. We added experimental support for the EnverBridge for Envertec Inverter, but be aware the accuracy is around -10% off.
 
 ## Requirements
 Web server with PHP and access to your energy meter (e.g. Raspberry Pi).
