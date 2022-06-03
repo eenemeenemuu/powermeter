@@ -85,6 +85,9 @@ function GetStats() {
 
         $skipped = 0;
         foreach ($data['Data']['QueryResults'] as $result) {
+            if ($result['STATUS'] == 1) {
+                continue;
+            }
             if ($result['SITETIME'] != $stats_timestamp) {
                 // skip outdated (missing) data
                 $skipped++;
