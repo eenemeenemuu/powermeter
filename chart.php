@@ -6,7 +6,7 @@ $i = 0;
 $pos = false;
 $files = array();
 foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
-    if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_') {
+    if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt') {
         continue;
     }
     if (isset($_GET['file']) && ($file == $_GET['file'] || $file == $_GET['file'].'.csv' || $file == $_GET['file'].'.csv.gz' || $file == $_GET['file'].'.gz')) {
