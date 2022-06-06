@@ -113,7 +113,7 @@ if (!isset($_GET['file'])) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
     function power_stats($value) {
-        global $power_stats, $power_details, $power_details_resolution, $device;
+        global $power_stats, $power_details, $power_details_wh, $power_details_resolution, $device;
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
         }
@@ -131,6 +131,7 @@ if (!isset($_GET['file'])) {
                 if ($power_details_resolution) {
                     for ($i = 0; $i <= $power_stats['last_p']; $i += $power_details_resolution) {
                         $power_details[$i] += $now - $power_stats['last_timestamp'];
+                        $power_details_wh[$i] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;;
                     }
                 }
                 $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
@@ -190,6 +191,7 @@ if (!isset($_GET['file'])) {
     $dataPoints_wh = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
     $power_details = array();
+    $power_details_wh = array();
     $temp_measured = false;
     $data = array();
     foreach ($lines as $line) {
@@ -425,9 +427,9 @@ if (!isset($_GET['file'])) {
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
-        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div></div>';
+        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">Ertrag:</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">&gt;'.($key ? '=' : '').' '.$key.' W</div><div class="cell">'.$value.'</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">&gt;'.($key ? '=' : '').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div></div>';
         }
    }
     echo '</body></html>';
