@@ -131,7 +131,7 @@ if (!isset($_GET['file'])) {
                 if ($power_details_resolution) {
                     for ($i = 0; $i <= $power_stats['last_p']; $i += $power_details_resolution) {
                         $power_details[$i] += $now - $power_stats['last_timestamp'];
-                        $power_details_wh[$i] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;;
+                        $power_details_wh[$i] += ($power_stats['last_p'] - $i) * ($now - $power_stats['last_timestamp']) / 60 / 60;
                     }
                 }
                 $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
