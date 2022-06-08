@@ -56,3 +56,15 @@ If your server is located in your local network (LAN) you maybe want to access t
 
 ## Favicon
 If you like, you can add a file "favicon.png" to the application's root directory, which will be displayed in your browser.
+
+## Docker
+
+We added a Basic Dockerfile.
+
+* Install Docker
+* git checkout
+* Add and edit config.inc.php
+* docker build powermeter -t powermeter
+* docker run -p 80:80 powermeter
+
+//TODO: add crons in Dockerfile
