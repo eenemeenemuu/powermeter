@@ -96,7 +96,7 @@ if (!isset($_GET['file'])) {
 
     echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
     for ($i = 0; $i < $power_details_max_count; $i++) {
-        echo '<th>&gt; '.$i * $power_details_resolution.' W</th>';
+        echo '<th>'.($i ? '&ge;' : '&gt;').' '.$i * $power_details_resolution.' W</th>';
     }
     echo '</tr></thead><tbody>';
 
@@ -429,7 +429,7 @@ if (!isset($_GET['file'])) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">Ertrag:</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">&gt;'.($key ? '=' : '').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div></div>';
         }
    }
     echo '</body></html>';
