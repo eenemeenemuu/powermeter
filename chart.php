@@ -17,11 +17,11 @@ foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
 }
 
 if (isset($_GET['today'])) {
-    header("Location: chart.php?file={$files[0]['name']}");
+    header("Location: chart.php?file={$files[0]['date']}");
 }
 
 if (isset($_GET['yesterday'])) {
-    header("Location: chart.php?file={$files[1]['name']}");
+    header("Location: chart.php?file={$files[1]['date']}");
 }
 
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
