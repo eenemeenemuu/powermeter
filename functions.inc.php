@@ -56,10 +56,39 @@ function GetStats() {
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = $obj->StatusSNS->ENERGY->Power;
+
             return $stats_array;
         } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
+            return (array(
+                'error',
+                'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'
+            ));
         }
+    } elseif ($device == 'shellyplug'){
+        $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
+
+        if (!$data) {
+            return (array('error', 'Unable to query shellyplug Go to <a href="chart.php">stats history</a>.'));
+        }
+
+        $power = 0;
+        foreach ($data['meters'] as $meter) {
+            if ($meter['is_valid']){
+                $power += $meter['power'];
+                $time = $meter['timestamp'];
+            }
+        }
+
+        if (!isset($time)) {
+            return (array('error', 'Unable to get stats. Please check Shelly IP configuration. Go to <a href="chart.php">stats history</a>.'));
+        }
+
+        $stats_array['date'] = date("d.m.Y", $time);
+        $stats_array['time'] = date("H:i:s", $time);
+        $stats_array['power'] = $power;
+        $stats_array['temp'] = $data['temperature'];
+
+        return $stats_array;
     } elseif ($device == 'envtec') {
         global $station_id;
 
