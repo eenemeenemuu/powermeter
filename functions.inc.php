@@ -64,11 +64,11 @@ function GetStats() {
                 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'
             ));
         }
-    } elseif ($device == 'shellyplug'){
+    } elseif ($device == 'shelly') {
         $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
 
         if (!$data) {
-            return (array('error', 'Unable to query shellyplug Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to query Shelly device. Go to <a href="chart.php">stats history</a>.'));
         }
 
         $power = 0;
@@ -80,13 +80,19 @@ function GetStats() {
         }
 
         if (!isset($time)) {
-            return (array('error', 'Unable to get stats. Please check Shelly IP configuration. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
 
-        $stats_array['date'] = date("d.m.Y", $time);
-        $stats_array['time'] = date("H:i:s", $time);
-        $stats_array['power'] = $power;
-        $stats_array['temp'] = $data['temperature'];
+        if ($time < 500000000) {
+            $time = time();
+        }
+
+        $stats_array['date'] = DateTime::createFromFormat('U', $time)->format("d.m.Y");
+        $stats_array['time'] = DateTime::createFromFormat('U', $time)->format("H:i:s");
+        $stats_array['power'] = round($power);
+        if (isset($data['temperature'])) {
+            $stats_array['temp'] = round($data['temperature']);
+        }
 
         return $stats_array;
     } elseif ($device == 'envtec') {
