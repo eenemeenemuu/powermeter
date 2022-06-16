@@ -184,6 +184,7 @@ if (!isset($_GET['file'])) {
         die();
     }
     $lines = array_unique(explode("\n", $data));
+    sort($lines);
     $date = substr($lines[0], 0, 10);
     $wh = 0;
     $dataPoints = array();
