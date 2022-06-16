@@ -59,10 +59,7 @@ function GetStats() {
 
             return $stats_array;
         } else {
-            return (array(
-                'error',
-                'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'
-            ));
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
         }
     } elseif ($device == 'shelly') {
         $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
@@ -133,7 +130,7 @@ function GetStats() {
         }
 
         $timeZone = new DateTimeZone('Europe/London');
-        $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $stats_timestamp, $timeZone);;
+        $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $stats_timestamp, $timeZone);
         $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
         $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
         $stats_array['power'] = array_sum($stats_power);
