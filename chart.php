@@ -426,10 +426,18 @@ if (!isset($_GET['file'])) {
     echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max\'">#max</button>';
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
+        $key_last = false;
+        $power_details_wh2 = $power_details_wh;
+        foreach ($power_details_wh as $key => $value) {
+            if ($key_last !== false) {
+                $power_details_wh2[$key_last] -= $value;
+            }
+            $key_last = $key;
+        }
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
-        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">Ertrag:</div></div>';
+        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.round($power_details_wh2[$key]).' Wh</div></div>';
         }
    }
     echo '</body></html>';
