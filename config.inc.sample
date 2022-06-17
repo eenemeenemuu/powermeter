@@ -5,6 +5,9 @@ $host = 'tasmotaplug4'; // host name or ip address of measuring device (not need
 $produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
 $refresh_rate = 2; // refresh rate of index.php in seconds
 
+// optional configuration
+$rounding_precision = 2; // set the number of decimal digits to round to for displaying various values like °C, W and Wh (for live view and power detail view) - don't affect logged values, they'll be stored always rounded
+
 // additional configuration for fritzbox
 $user = ''; // user name
 $pass = ''; // password

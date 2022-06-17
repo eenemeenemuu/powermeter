@@ -16,7 +16,7 @@ function GetSessionId ($user, $pass) {
     return $sid; 
 }
 
-function GetStats() {
+function GetStats($rounding_precision = 0) {
     global $device, $host;
     if ($device == 'fritzbox') {
         if (!function_exists('mb_convert_encoding')) {
@@ -36,11 +36,11 @@ function GetStats() {
 
             preg_match('/<power><stats count="[0-9]+" grid="[0-9]+">([0-9]+),/', $stats, $match);
             $power = $match[1];
-            $stats_array['power'] = round($power/100);
+            $stats_array['power'] = round($power/100, $rounding_precision);
 
             preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+">([\-0-9]+),/', $stats, $match);
             $temp = $match[1];
-            $stats_array['temp'] = round($temp/10);
+            $stats_array['temp'] = round($temp/10, $rounding_precision);
 
             return $stats_array;
         } else {
@@ -55,7 +55,7 @@ function GetStats() {
             }
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = $obj->StatusSNS->ENERGY->Power;
+            $stats_array['power'] = round($obj->StatusSNS->ENERGY->Power, $rounding_precision);
 
             return $stats_array;
         } else {
@@ -86,9 +86,9 @@ function GetStats() {
 
         $stats_array['date'] = DateTime::createFromFormat('U', $time)->format("d.m.Y");
         $stats_array['time'] = DateTime::createFromFormat('U', $time)->format("H:i:s");
-        $stats_array['power'] = round($power);
+        $stats_array['power'] = round($power, $rounding_precision);
         if (isset($data['temperature'])) {
-            $stats_array['temp'] = round($data['temperature']);
+            $stats_array['temp'] = round($data['temperature'], $rounding_precision);
         }
 
         return $stats_array;
@@ -134,14 +134,14 @@ function GetStats() {
         $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
         $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
         $stats_array['power'] = array_sum($stats_power);
-        $stats_array['temp'] = round(array_sum($stats_temp)/count($stats_temp));
+        $stats_array['temp'] = round(array_sum($stats_temp)/count($stats_temp), $rounding_precision);
 
         if ($skipped) {
             // assume power of the skipped modules are identical
             $i = count($data['Data']['QueryResults']);
             $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
         }
-        $stats_array['power'] = round($stats_array['power']);
+        $stats_array['power'] = round($stats_array['power'], $rounding_precision);
 
         return $stats_array;
     } else {

@@ -444,7 +444,7 @@ if (!isset($_GET['file'])) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key]).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.round($power_details_wh2[$key]).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.round($power_details_wh3[$key]).' Wh</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key], $rounding_precision).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.round($power_details_wh2[$key], $rounding_precision).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.round($power_details_wh3[$key], $rounding_precision).' Wh</div></div>';
         }
    }
     echo '</body></html>';
