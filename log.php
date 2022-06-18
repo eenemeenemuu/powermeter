@@ -39,7 +39,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
             die();
         }
-        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[0-9]{1,5}', '[\-0-9]{1,4}'];
+        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,4}(\.[0-9]{1,3})?'];
         foreach (explode(",", $stats_string) as $stat) {
             if (!preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
                 die();
@@ -51,7 +51,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
 } else {
     for ($i = 0; $i < $log_rate; $i++) {
         $get_stats_start = microtime(true);
-        $stats = GetStats();
+        $stats = GetStats($rounding_precision);
         if ($stats[0] != 'error') {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
             if (isset($stats['temp'])) {
