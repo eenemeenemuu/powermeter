@@ -175,6 +175,7 @@ if (!isset($_GET['file'])) {
         $data2 = file_get_contents($log_file_dir.$files[$pos-1]['name']);
         $data .= gzdecode($data2);
     }
+    $data = trim($data);
     if (isset($_GET['download'])) {
         header('Content-type: text/csv');
         header('Content-Disposition: attachment; filename="'.$files[$pos]['date'].'.csv"');
