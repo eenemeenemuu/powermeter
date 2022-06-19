@@ -213,11 +213,11 @@ if (!isset($_GET['file'])) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 power_stats($value);
-                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => $value['p']);
-                $dataPoints_wh[] = round($power_stats['wh']);
+                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => round($value['p'], $rounding_precision));
+                $dataPoints_wh[] = round($power_stats['wh'], $rounding_precision);
                 if (isset($value['t'])) {
                     $temp_measured = true;
-                    $dataPoints_t[] = $value['t'];
+                    $dataPoints_t[] = round($value['t'], $rounding_precision);
                 }
             }
         }
@@ -246,24 +246,24 @@ if (!isset($_GET['file'])) {
                     }
                 }
                 if (count($p_res)) {
-                    $y = round(array_sum($p_res) / count($p_res));
+                    $y = round(array_sum($p_res) / count($p_res), $rounding_precision);
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
                 if (count($p_res)) {
-                    $dataPoints_wh[] = round($power_stats['wh']);
+                    $dataPoints_wh[] = round($power_stats['wh'], $rounding_precision);
                 } else {
                     $dataPoints_wh[] = null;
                 }
                 if (count($t_res)) {
                     $temp_measured = true;
-                    $dataPoints_t[] = round(array_sum($t_res) / count($t_res));
+                    $dataPoints_t[] = round(array_sum($t_res) / count($t_res), $rounding_precision);
                 } else {
                     $dataPoints_t[] = null;
                 }
             }
         }
     }
-    $wh = round($power_stats['wh']);
+    $wh = round($power_stats['wh'], $rounding_precision);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
