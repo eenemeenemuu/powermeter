@@ -36,11 +36,11 @@ function GetStats() {
 
             preg_match('/<power><stats count="[0-9]+" grid="[0-9]+">([0-9]+),/', $stats, $match);
             $power = $match[1];
-            $stats_array['power'] = pm_round($power/100, true);
+            $stats_array['power'] = pm_round($power/100, true, 2);
 
             preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+">([\-0-9]+),/', $stats, $match);
             $temp = $match[1];
-            $stats_array['temp'] = pm_round($temp/10, true);
+            $stats_array['temp'] = pm_round($temp/10, true, 1);
 
             return $stats_array;
         } else {
@@ -55,7 +55,7 @@ function GetStats() {
             }
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($obj->StatusSNS->ENERGY->Power, true);
+            $stats_array['power'] = pm_round($obj->StatusSNS->ENERGY->Power, true, 0);
 
             return $stats_array;
         } else {
@@ -86,9 +86,9 @@ function GetStats() {
 
         $stats_array['date'] = DateTime::createFromFormat('U', $time)->format("d.m.Y");
         $stats_array['time'] = DateTime::createFromFormat('U', $time)->format("H:i:s");
-        $stats_array['power'] = pm_round($power, true);
+        $stats_array['power'] = pm_round($power, true, 2);
         if (isset($data['temperature'])) {
-            $stats_array['temp'] = pm_round($data['temperature'], true);
+            $stats_array['temp'] = pm_round($data['temperature'], true, 2);
         }
 
         return $stats_array;
@@ -134,14 +134,14 @@ function GetStats() {
         $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
         $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
         $stats_array['power'] = array_sum($stats_power);
-        $stats_array['temp'] = pm_round(array_sum($stats_temp)/count($stats_temp), true);
+        $stats_array['temp'] = pm_round(array_sum($stats_temp)/count($stats_temp), true, 1);
 
         if ($skipped) {
             // assume power of the skipped modules are identical
             $i = count($data['Data']['QueryResults']);
             $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
         }
-        $stats_array['power'] = pm_round($stats_array['power'], true);
+        $stats_array['power'] = pm_round($stats_array['power'], true, 0);
 
         return $stats_array;
     } else {
@@ -154,10 +154,10 @@ function date_dot2dash($date) {
     return "{$date_parts[2]}-{$date_parts[1]}-{$date_parts[0]}";
 }
 
-function pm_round($value, $number_format = false) {
+function pm_round($value, $number_format = false, $max_precision_level = 9) {
     global $rounding_precision;
     if ($number_format) {
-        return number_format($value, $rounding_precision, '.', '');
+        return number_format($value, min($rounding_precision, $max_precision_level), '.', '');
     } else {
         return round($value, $rounding_precision);
     }
