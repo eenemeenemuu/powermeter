@@ -141,7 +141,7 @@ function GetStats() {
             $i = count($data['Data']['QueryResults']);
             $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
         }
-        $stats_array['power'] = pm_round($stats_array['power'], true, 0);
+        $stats_array['power'] = pm_round($stats_array['power'], true, 2);
 
         return $stats_array;
     } else {
