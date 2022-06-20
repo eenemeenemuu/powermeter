@@ -51,7 +51,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
 } else {
     for ($i = 0; $i < $log_rate; $i++) {
         $get_stats_start = microtime(true);
-        $stats = GetStats($rounding_precision);
+        $stats = GetStats();
         if ($stats[0] != 'error') {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
             if (isset($stats['temp'])) {

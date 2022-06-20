@@ -1,6 +1,7 @@
 <?php
 
 require('config.inc.php');
+require('functions.inc.php');
 
 $i = 0;
 $pos = false;
@@ -213,11 +214,11 @@ if (!isset($_GET['file'])) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 power_stats($value);
-                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => round($value['p'], $rounding_precision));
-                $dataPoints_wh[] = round($power_stats['wh'], $rounding_precision);
+                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
+                $dataPoints_wh[] = pm_round($power_stats['wh']);
                 if (isset($value['t'])) {
                     $temp_measured = true;
-                    $dataPoints_t[] = round($value['t'], $rounding_precision);
+                    $dataPoints_t[] = pm_round($value['t']);
                 }
             }
         }
@@ -246,27 +247,27 @@ if (!isset($_GET['file'])) {
                     }
                 }
                 if (count($p_res)) {
-                    $y = round(array_sum($p_res) / count($p_res), $rounding_precision);
+                    $y = pm_round(array_sum($p_res) / count($p_res));
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
                 if (count($p_res)) {
-                    $dataPoints_wh[] = round($power_stats['wh'], $rounding_precision);
+                    $dataPoints_wh[] = pm_round($power_stats['wh']);
                 } else {
                     $dataPoints_wh[] = null;
                 }
                 if (count($t_res)) {
                     $temp_measured = true;
-                    $dataPoints_t[] = round(array_sum($t_res) / count($t_res), $rounding_precision);
+                    $dataPoints_t[] = pm_round(array_sum($t_res) / count($t_res));
                 } else {
                     $dataPoints_t[] = null;
                 }
             }
         }
     }
-    $wh = round($power_stats['wh'], $rounding_precision);
+    $wh = pm_round($power_stats['wh'], true);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
-    $power_stats['peak']['p'] = round($power_stats['peak']['p'], $rounding_precision);
+    $power_stats['peak']['p'] = pm_round($power_stats['peak']['p'], true);
     $power_stats['peak']['t'] = str_pad($power_stats['peak']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['peak']['s'], 2, 0, STR_PAD_LEFT);
     foreach($power_details as $key => $value) {
         $power_details[$key] = gmdate("H:i:s", $value);
@@ -446,7 +447,7 @@ if (!isset($_GET['file'])) {
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.round($power_details_wh[$key], $rounding_precision).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.round($power_details_wh2[$key], $rounding_precision).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.round($power_details_wh3[$key], $rounding_precision).' Wh</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.pm_round($power_details_wh[$key], true).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.pm_round($power_details_wh2[$key], true).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.pm_round($power_details_wh3[$key], true).' Wh</div></div>';
         }
    }
     echo '</body></html>';

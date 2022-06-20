@@ -3,7 +3,7 @@ require('config.inc.php');
 
 if (!$use_cache || isset($_GET['nocache'])) {
     require('functions.inc.php');
-    $stats_array = GetStats($rounding_precision);
+    $stats_array = GetStats();
     if ($stats_array[0] == 'error') {
         die($stats_array[1]);
     }
