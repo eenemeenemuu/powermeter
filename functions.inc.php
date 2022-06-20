@@ -55,7 +55,7 @@ function GetStats() {
             }
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($obj->StatusSNS->ENERGY->Power, true, 0);
+            $stats_array['power'] = pm_round($obj->StatusSNS->ENERGY->Voltage*$obj->StatusSNS->ENERGY->Current, true, 3);
 
             return $stats_array;
         } else {
