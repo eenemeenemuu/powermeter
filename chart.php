@@ -115,6 +115,7 @@ if (!isset($_GET['file'])) {
     }
     function power_stats($value) {
         global $power_stats, $power_details, $power_details_wh, $power_details_resolution, $device;
+        $value['p'] = floatval($value['p']);
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
         }
