@@ -156,7 +156,7 @@ function date_dot2dash($date) {
 
 function pm_round($value, $number_format = false, $max_precision_level = 9) {
     global $rounding_precision;
-    if ($number_format) {
+    if ($number_format && $rounding_precision) {
         return number_format($value, min($rounding_precision, $max_precision_level), '.', '');
     } else {
         return round($value, $rounding_precision);
