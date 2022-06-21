@@ -6,7 +6,8 @@ $produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
 $refresh_rate = 2; // refresh rate of index.php in seconds
 
 // optional configuration
-$rounding_precision = 2; // set the number of decimal digits to round to for displaying various values like °C, W and Wh - doesn't affect daily overview
+$rounding_precision = 0; // set the number of decimal digits to round to for displaying/logging various values like °C, W and Wh (if possible)
+$power_threshold = 0; // minimum required power to display/log power value (may be required if micro inverter has measurable consumption at night); can be float value like 0.25
 
 // additional configuration for fritzbox
 $user = ''; // user name

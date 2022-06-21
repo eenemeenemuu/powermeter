@@ -155,7 +155,10 @@ function date_dot2dash($date) {
 }
 
 function pm_round($value, $number_format = false, $max_precision_level = 9) {
-    global $rounding_precision;
+    global $rounding_precision, $power_threshold;
+    if ($value < $power_threshold) {
+        return 0;
+    }
     if ($number_format && $rounding_precision) {
         return number_format($value, min($rounding_precision, $max_precision_level), '.', '');
     } else {
