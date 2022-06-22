@@ -377,7 +377,7 @@ if (!isset($_GET['file'])) {
                 y_wh: { display: false, suggestedMin: 0,$axisY_max_wh },
                 $t_scale
             },
-            elements: { point: { radius: 0, hitRadius: 50 } },
+            elements: { point: { radius: 0, hitRadius: 10 } },
             maintainAspectRatio: false,
             animation: false,
             normalized: true,
