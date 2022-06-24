@@ -1,4 +1,7 @@
-document.onkeydown = function(e) { 
+document.onkeydown = function(e) {
+    if (document.activeElement === document.getElementById("fix")) {
+        return;
+    }
     if (!e) {
         e = window.event;
     }

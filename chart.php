@@ -408,7 +408,7 @@ if (!isset($_GET['file'])) {
         echo "<option value=\"$value\"$selected>$text</option>";
     }
     echo '</select>';
-    echo ' | Skala fixieren auf <input type="text" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
+    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
     echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
         $selected = $i == $t1 ? ' selected="selected"' : '';
