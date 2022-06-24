@@ -332,8 +332,9 @@ if (!isset($_GET['file'])) {
     }
     echo '</div></div>';
     if ($display_temp && $temp_measured) {
-        $min = min($dataPoints_t) - 1;
-        $max = max($dataPoints_t) + 1;
+        $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
+        $min = ceil(min($dataPoints_t_wo_null)) - 1;
+        $max = floor(max($dataPoints_t_wo_null)) + 1;
         $t_dataset = ",{
                 label: 'Temperatur',
                 yAxisID: 'y_t',
