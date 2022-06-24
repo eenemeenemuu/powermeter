@@ -34,4 +34,8 @@ document.onkeydown = function(e) {
         e.preventDefault();
         document.getElementById("reset").click();
     }
+    if (kcode >= 48 && kcode <= 54) {
+        document.getElementById("res").selectedIndex = kcode - 48;
+        document.forms[0].submit();
+    }
 };
