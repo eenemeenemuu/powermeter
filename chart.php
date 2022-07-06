@@ -313,9 +313,8 @@ if (!isset($_GET['file'])) {
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
-    if ($_GET['refresh']) {
+    if ($_GET['refresh'] && $pos === 0) {
         echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
-        $params .= '&refresh=on';
     }
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="chart.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
