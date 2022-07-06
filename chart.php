@@ -210,8 +210,6 @@ if (!isset($_GET['file'])) {
         }
     }
     if ($res == -1) {
-        $last_p = 0;
-        $last_timestamp = 0;
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 power_stats($value);
