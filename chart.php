@@ -384,7 +384,16 @@ if ($_GET['file']) {
     if ($pos === false) {
         die('Error! No data found for '.$month);
     }
-
+    if (isset($_GET['download'])) {
+        header('Content-type: text/csv');
+        header('Content-Disposition: attachment; filename="'.$month.'.csv"');
+        ob_clean();
+        flush();
+        foreach ($chart_stats_this_month as $key => $value) {
+            echo "$key,$value\n";
+        }
+        die();
+    }
     $kwh = pm_round(array_sum($chart_stats_this_month)/1000);
     $get_fix = trim($_GET['fix']);
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : $fix_axis_y * 8;
@@ -393,7 +402,7 @@ if ($_GET['file']) {
     }
     $params = '&fix='.$fix_axis_y;
     echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -448,11 +457,11 @@ if ($_GET['file']) {
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$produce_consume.': '.$kwh.' kWh';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$produce_consume.' (gesamt): '.$kwh.' kWh';
     if (count($chart_stats_this_month) > 1) {
         asort($chart_stats_this_month);
-        echo ' | Bester Ertrag: '.array_pop($chart_stats_this_month).' Wh';
-        echo ' | Schlechtester Ertrag: '.array_shift($chart_stats_this_month).' Wh';
+        echo ' | '.$produce_consume.' (max): '.array_pop($chart_stats_this_month).' Wh';
+        echo ' | '.$produce_consume.' (min): '.array_shift($chart_stats_this_month).' Wh';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> Wh (0 = dynamisch)';
 } else {
