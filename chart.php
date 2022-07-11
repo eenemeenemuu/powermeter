@@ -357,7 +357,7 @@ if ($_GET['file']) {
     }
     echo '</body></html>';
 } elseif ($_GET['m']) {
-    $month = htmlentities($_GET['m']);
+    $month = htmlentities(trim($_GET['m']));
     list($chart_stats) = pm_scan_chart_stats();
 
     foreach ($chart_stats as $day => $data) {
@@ -385,17 +385,24 @@ if ($_GET['file']) {
         die('Error! No data found for '.$month);
     }
 
-    echo '<title>'.$month.' ('.$produce_consume.': '.pm_round(array_sum($chart_stats_this_month)/1000).' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    $kwh = pm_round(array_sum($chart_stats_this_month)/1000);
+    $get_fix = trim($_GET['fix']);
+    $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : $fix_axis_y * 8;
+    if ($fix_axis_y) {
+        $axisY_max = " max: $fix_axis_y,";
+    }
+    $params = '&fix='.$fix_axis_y;
+    echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
     echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
-        echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].'" title="vorheriger Monat">⏪</a>';
+        echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
     } else {
         echo '<span style="opacity: 0.3;">⏪</span>';
     }
     echo " $month ";
     if ($pos > 0) {
-        echo '<a id="next" href="?m='.$chart_stats_months[$pos-1].'" title="nächster Monat">⏩</a>';
+        echo '<a id="next" href="?m='.$chart_stats_months[$pos-1].$params.'" title="nächster Monat">⏩</a>';
     } else {
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
@@ -404,10 +411,10 @@ if ($_GET['file']) {
     <script>
     var ctx = document.getElementById('myChart');
     var myChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             datasets: [{
-                label: '".$produce_consume."',
+                label: '$produce_consume',
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -422,7 +429,7 @@ if ($_GET['file']) {
                 tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' Wh'; } } }
             },
             scales: { 
-                y: { position: 'right', suggestedMin: 0, ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
+                y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
             maintainAspectRatio: false,
@@ -441,6 +448,13 @@ if ($_GET['file']) {
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$produce_consume.': '.$kwh.' kWh';
+    if (count($chart_stats_this_month) > 1) {
+        asort($chart_stats_this_month);
+        echo ' | Bester Ertrag: '.array_pop($chart_stats_this_month).' Wh';
+        echo ' | Schlechtester Ertrag: '.array_shift($chart_stats_this_month).' Wh';
+    }
+    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> Wh (0 = dynamisch)';
 } else {
     header("Location: overview.php");
 }
