@@ -163,7 +163,7 @@ if (!isset($_GET['file'])) {
     if ($t1 > $t2) {
         $t1 = $t2;
     }
-    if (isset($_GET['max']) || isset($_GET['follow'])) {
+    if (isset($_GET['max'])) {
         $res = -1;
         $t1 = 0;
         $t2 = 23;
@@ -209,6 +209,13 @@ if (!isset($_GET['file'])) {
             }
         }
     }
+    if ($_GET['refresh'] && $pos === 0) {
+        $meta_refresh = '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
+        $data_last_h = intval($data[array_key_last($data)]['h']);
+        if ($t2 < $data_last_h) {
+            $t2 = $data_last_h;
+        }
+    }
     if ($res == -1) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
@@ -222,10 +229,7 @@ if (!isset($_GET['file'])) {
             }
         }
         if (isset($_GET['max'])) {
-            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}");
-        }
-        if (isset($_GET['follow'])) {
-            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2=23&refresh=on");
+            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}".(isset($_GET['refresh']) ? '&refresh=on' : ''));
         }
     } else {
         if ($t1 === 0) {
@@ -309,11 +313,8 @@ if (!isset($_GET['file'])) {
         $axisY_max = " max: $fix_axis_y,";
         $axisY_max_wh = " max: ".($fix_axis_y * 8).",";
     }
-    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
-    if ($_GET['refresh'] && $pos === 0) {
-        echo '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
-    }
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="chart.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
@@ -422,11 +423,10 @@ if (!isset($_GET['file'])) {
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label></form>';
-        echo ' | <button onclick="location.href=\'?file='.$files[$pos]['date'].'&follow\'">#follow</button>';
     } else {
         echo '</form>';
     }
-    echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max\'">#max</button>';
+    echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
         $key_last = false;
