@@ -3,7 +3,7 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-list($files, $pos) = pm_scan_log_file_dir();
+list($files, $pos, $file_dates) = pm_scan_log_file_dir();
 
 echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
 
@@ -28,19 +28,7 @@ if ($_GET['update'] == 'missing') {
     }
 }
 
-foreach ($files as $key => $file) {
-    $file_dates[] = $file['date'];
-}
-array_unique($file_dates);
-
-foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
-    $stat_parts = explode(',', $line);
-    if ($stat_parts[0] && in_array($stat_parts[0], $file_dates)) {
-        $chart_stats[$stat_parts[0]] = $stat_parts;
-        $date_parts = explode('-', $stat_parts[0]);
-        $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
-    }
-}
+list($chart_stats, $chart_stats_month) = pm_scan_chart_stats();
 krsort($chart_stats_month);
 
 $power_details_max_count = 0;
@@ -66,10 +54,10 @@ foreach ($chart_stats_month as $year => $months) {
         $month_array[$month] = $value;
         $year_sum += $value;
     }
-    foreach ($month_array as $value) {
-        echo '<td>'.($value ? round($value/1000, 2) : '-').'</td>';
+    foreach ($month_array as $key => $value) {
+        echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.round($value/1000, 2).'</a>' : '-').'</td>';
     }
-    echo '<td><strong>'.($year_sum ? round($year_sum/1000, 2) : '-').'</strong></td>';
+    echo '<td>'.($year_sum ? round($year_sum/1000, 2) : '-').'</td>';
     echo '</tr>';
 }
 echo '</table><br />';
