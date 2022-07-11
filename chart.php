@@ -3,7 +3,7 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-if ($_GET['file']) {
+if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     list($files, $pos) = pm_scan_log_file_dir();
 
     if (isset($_GET['today'])) {
