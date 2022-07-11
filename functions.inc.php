@@ -44,7 +44,7 @@ function GetStats() {
 
             return $stats_array;
         } else {
-            return (array('error', 'Unable to get stats. Please check host, username, password and ain configuration. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to get stats. Please check host, username, password and ain configuration. Go to <a href="overview.php">stats history</a>.'));
         }
     } elseif ($device == 'tasmota') {
         $obj = json_decode(file_get_contents('http://'.$host.'/cm?cmnd=Status%208'));
@@ -59,13 +59,13 @@ function GetStats() {
 
             return $stats_array;
         } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
     } elseif ($device == 'shelly') {
         $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
 
         if (!$data) {
-            return (array('error', 'Unable to query Shelly device. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to query Shelly device. Go to <a href="overview.php">stats history</a>.'));
         }
 
         $power = 0;
@@ -77,7 +77,7 @@ function GetStats() {
         }
 
         if (!isset($time)) {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
 
         if ($time < 500000000) {
@@ -101,13 +101,13 @@ function GetStats() {
         $result = file_get_contents($url, false, $context);
 
         if (!$result) {
-            return (array('error', 'Unable to query envertecportal.com. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to query envertecportal.com. Go to <a href="overview.php">stats history</a>.'));
         }
 
         $data = json_decode($result, true);
 
         if (!$data['Data']['QueryResults']) {
-            return (array('error', 'Unable to get stats. Please check station ID configuration. Go to <a href="chart.php">stats history</a>.'));
+            return (array('error', 'Unable to get stats. Please check station ID configuration. Go to <a href="overview.php">stats history</a>.'));
         }
 
         foreach ($data['Data']['QueryResults'] as $result) {
@@ -164,6 +164,24 @@ function pm_round($value, $number_format = false, $max_precision_level = 9) {
     } else {
         return round($value, $rounding_precision);
     }
+}
+
+function pm_scan_log_file_dir() {
+    global $log_file_dir;
+    $i = 0;
+    $pos = false;
+    $files = [];
+    foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
+        if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt') {
+            continue;
+        }
+        if (isset($_GET['file']) && ($file == $_GET['file'] || $file == $_GET['file'].'.csv' || $file == $_GET['file'].'.csv.gz' || $file == $_GET['file'].'.gz')) {
+            $pos = $i;
+        }
+        $i++;
+        $files[] = array('date' => substr($file, 0, strpos($file, '.')), 'name' => $file);
+    }
+    return [$files, $pos];
 }
 
 //EOF
