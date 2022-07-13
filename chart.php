@@ -449,21 +449,12 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            const firstPoint = points[0];
-            const keys = Object.keys(myChart.data.datasets[firstPoint.datasetIndex].data);
-            const value = keys[firstPoint.index];
-            location.href = 'chart.php?file=' + value;
+            location.href = 'chart.php?file=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index];
         }
     }
     ctx.onmousemove = function(evt) {
-        const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-        if (points.length) {
-            ctx.style.cursor = 'pointer';
-        } else {
-            ctx.style.cursor = 'default';
-        }
+        ctx.style.cursor = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true).length ? 'pointer' : 'default';
     }
-
     window.addEventListener('swap', function(event) {
         if (event.detail.direction == 'left') {
             location.href = document.getElementById('next').href;
@@ -577,21 +568,12 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            const firstPoint = points[0];
-            const keys = Object.keys(myChart.data.datasets[firstPoint.datasetIndex].data);
-            const value = keys[firstPoint.index];
-            location.href = 'chart.php?m=' + value;
+            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index];
         }
     }
     ctx.onmousemove = function(evt) {
-        const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
-        if (points.length) {
-            ctx.style.cursor = 'pointer';
-        } else {
-            ctx.style.cursor = 'default';
-        }
+        ctx.style.cursor = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true).length ? 'pointer' : 'default';
     }
-
     window.addEventListener('swap', function(event) {
         if (event.detail.direction == 'left') {
             location.href = document.getElementById('next').href;
