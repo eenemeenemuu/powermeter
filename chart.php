@@ -221,7 +221,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
-    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="month" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsübersicht">📅</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="expand" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsübersicht">📅</a> <a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
@@ -402,7 +402,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     $params = '&fix='.$fix_axis_y;
     echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="year" href="?y='.substr($month, 0, 4).'" title="Zur Jahresübersicht">📅</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).'" title="Zur Jahresübersicht">📅</a> <a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -530,7 +530,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     $params = '&fix='.$fix_axis_y;
     echo '<title>'.$year.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="home" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a></div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
         echo '<a id="prev" href="?y='.$chart_stats_years[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
