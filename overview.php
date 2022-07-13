@@ -57,7 +57,7 @@ foreach ($chart_stats_month as $year => $months) {
     foreach ($month_array as $key => $value) {
         echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.round($value/1000, 2).'</a>' : '-').'</td>';
     }
-    echo '<td>'.($year_sum ? round($year_sum/1000, 2) : '-').'</td>';
+    echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.'">'.round($year_sum/1000, 2) : '-').'</a></td>';
     echo '</tr>';
 }
 echo '</table><br />';
