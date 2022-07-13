@@ -455,6 +455,14 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             location.href = 'chart.php?file=' + value;
         }
     }
+    ctx.onmousemove = function(evt) {
+        const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+        if (points.length) {
+            ctx.style.cursor = 'pointer';
+        } else {
+            ctx.style.cursor = 'default';
+        }
+    }
 
     window.addEventListener('swap', function(event) {
         if (event.detail.direction == 'left') {
@@ -573,6 +581,14 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             const keys = Object.keys(myChart.data.datasets[firstPoint.datasetIndex].data);
             const value = keys[firstPoint.index];
             location.href = 'chart.php?m=' + value;
+        }
+    }
+    ctx.onmousemove = function(evt) {
+        const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+        if (points.length) {
+            ctx.style.cursor = 'pointer';
+        } else {
+            ctx.style.cursor = 'default';
         }
     }
 
