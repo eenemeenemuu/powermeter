@@ -24,7 +24,7 @@ document.onkeydown = function(e) {
     }
     if (kcode == 36) { // Home
         e.preventDefault();
-        document.getElementById("home").click();
+        document.getElementById("overview").click();
     }
     if (kcode == 37) { // ArrowLeft
         e.preventDefault();
@@ -35,7 +35,7 @@ document.onkeydown = function(e) {
         if (document.body.contains(document.getElementById("expand"))) {
             document.getElementById("expand").click();
         } else {
-            document.getElementById("home").click();
+            document.getElementById("overview").click();
         }
     }
     if (kcode == 39) { // ArrowRight
