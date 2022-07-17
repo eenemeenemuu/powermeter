@@ -35,7 +35,7 @@ $power_details_max_count = 0;
 if ($power_details_resolution) {
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_details_'.$power_details_resolution.'.csv')) as $line) {
         $stat_parts = explode(',', $line);
-        if ($stat_parts[0] && in_array($stat_parts[0], $file_dates)) {
+        if ($stat_parts[0]) {
             $power_details[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
             $power_details_max_count = max(count($power_details[$stat_parts[0]]), $power_details_max_count);
         }
@@ -68,8 +68,10 @@ for ($i = 0; $i < $power_details_max_count; $i++) {
 }
 echo '</tr></thead><tbody>';
 
-foreach ($file_dates as $date) {
-    echo "<tr><td><a href=\"chart.php?file={$date}\">{$date}</a></td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
+$file_dates_w_stats_data = array_unique(array_merge($file_dates, array_keys($chart_stats)));
+rsort($file_dates_w_stats_data);
+foreach ($file_dates_w_stats_data as $date) {
+    echo "<tr><td>".(in_array($date, $file_dates) ? "<a href=\"chart.php?file={$date}\">{$date}</a>" : $date)."</td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
     for ($i = 0; $i < $power_details_max_count; $i++) {
         echo '<td>'.$power_details[$date][$i * $power_details_resolution].'</td>';
     }
