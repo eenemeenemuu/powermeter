@@ -43,7 +43,7 @@ if ($power_details_resolution) {
 }
 
 echo '<link rel="stylesheet" href="css/tablesort.css"><script src="js/tablesort.min.js"></script><script src="js/tablesort.number.min.js"></script>';
-echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body><a href=".">Zur aktuellen Leistungsanzeige</a><br /><br />';
+echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body>🔌 <a href=".">Zur aktuellen Leistungsanzeige</a><br /><br />';
 
 echo '<table border="1"><tr><td colspan="14" align="center">'.$produce_consume.' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
 foreach ($chart_stats_month as $year => $months) {
