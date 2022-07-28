@@ -39,9 +39,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
             die();
         }
-        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,4}(\.[0-9]{1,3})?'];
+        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,4}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?'];
         foreach (explode(",", $stats_string) as $stat) {
-            if (!preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
+            if ($stat && !preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
                 die();
             }
         }
@@ -56,6 +56,11 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];
+            }
+            if (isset($stats['emeters'])) {
+                foreach ($stats['emeters'] as $emeter) {
+                    $stats_string .= ','.$emeter;
+                }
             }
             if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
                 file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);

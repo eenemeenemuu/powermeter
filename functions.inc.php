@@ -71,7 +71,10 @@ function GetStats() {
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = pm_round($data['total_power'], true, 2);
-
+            $stats_array['temp'] = '';
+            foreach ($data['emeters'] as $emeter) {
+                $stats_array['emeters'][] = $emeter['power'];
+            }
             return $stats_array;
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
