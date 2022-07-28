@@ -61,6 +61,21 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
+    } elseif ($device == 'shelly3em') {
+        $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
+        if ($data) {
+            $time = $data['unixtime'];
+            if ($time < 500000000) {
+                $time = time();
+            }
+            $stats_array['date'] = date("d.m.Y", $time);
+            $stats_array['time'] = date("H:i:s", $time);
+            $stats_array['power'] = pm_round($data['total_power'], true, 2);
+
+            return $stats_array;
+        } else {
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
+        }
     } elseif ($device == 'shelly') {
         $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
 
