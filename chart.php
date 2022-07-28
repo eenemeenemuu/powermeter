@@ -28,8 +28,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         if ($value['p']) {
             $power_stats['last'] = $value;
         }
-        if ($value['p'] && $value['p'] > $power_stats['peak']['p']) {
-            $power_stats['peak'] = $value;
+        $value_abs = $value;
+        $value_abs['p'] = abs($value['p']);
+        if ($value_abs['p'] && $value_abs['p'] > $power_stats['peak']['p']) {
+            $power_stats['peak'] = $value_abs;
         }
         if ($power_stats['last_p']) {
             $limit = $device == 'envtec' ? 300 : 100;
@@ -42,7 +44,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                         $power_details_wh[$i] += ($power_stats['last_p'] - $i) * ($now - $power_stats['last_timestamp']) / 60 / 60;
                     }
                 }
-                $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
+                if ($power_stats['last_p'] < 0) {
+                    $power_stats['wh_feed'] -= $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
+                } else {
+                    $power_stats['wh'] += $power_stats['last_p'] * ($now - $power_stats['last_timestamp']) / 60 / 60;
+                }
             }
         }
         $power_stats['last_p'] = $value['p'];
@@ -98,10 +104,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $dataPoints = array();
     $dataPoints_t = array();
     $dataPoints_wh = array();
+    $dataPoints_wh_feed = array();
+    $dataPoints_feed = array();
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
     $power_details = array();
     $power_details_wh = array();
     $temp_measured = false;
+    $feed_measured = false;
     $data = array();
     sort($lines);
     foreach ($lines as $line) {
@@ -126,8 +135,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
                 power_stats($value);
-                $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
+                if ($value['p'] < 0) {
+                    $feed_measured = true;
+                    $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
+                    $dataPoints_feed[] = pm_round(abs($value['p']));
+                } else {
+                    $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
+                    $dataPoints_feed[] = 0;
+                }
                 $dataPoints_wh[] = pm_round($power_stats['wh']);
+                $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
                 if (isset($value['t'])) {
                     $temp_measured = true;
                     $dataPoints_t[] = pm_round($value['t']);
@@ -145,10 +162,17 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             for ($m = 0; $m < 60; $m = $m + $res) {
                 $p_res = array();
                 $t_res = array();
-                $y = null;
+                $p_res_feed = array();
+                $y = 0;
+                $y_feed = null;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
-                        $p_res[] = $value['p'];
+                        if ($value['p'] < 0) {
+                            $feed_measured = true;
+                            $p_res_feed[] = $value['p'];
+                        } else {
+                            $p_res[] = $value['p'];
+                        }
                         if (isset($value['t'])) {
                             $t_res[] = $value['t'];
                         }
@@ -159,11 +183,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     $y = pm_round(array_sum($p_res) / count($p_res));
                 }
                 $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
-                if (count($p_res)) {
-                    $dataPoints_wh[] = pm_round($power_stats['wh']);
-                } else {
-                    $dataPoints_wh[] = null;
+
+                if (count($p_res_feed)) {
+                    $feed_measured = true;
+                    $y_feed = pm_round(array_sum($p_res_feed) / count($p_res_feed));
                 }
+                $dataPoints_feed[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => abs($y_feed));
+
+                $dataPoints_wh[] = pm_round($power_stats['wh']);
+                $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
+
                 if (count($t_res)) {
                     $temp_measured = true;
                     $dataPoints_t[] = pm_round(array_sum($t_res) / count($t_res));
@@ -217,7 +246,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
-        $axisY_max_wh = " max: ".($fix_axis_y * 8).",";
+    } else {
+        $axisY_max = " max: ".(ceil($power_stats['peak']['p']/100)*100).",";
     }
     echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
@@ -235,6 +265,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    $datasetIndex = 2;
     if ($display_temp && $temp_measured) {
         $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
         $min = ceil(min($dataPoints_t_wo_null)) - 1;
@@ -247,8 +278,23 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 borderWidth: 2,
                 borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
             }";
-        $t_tooltip = "else if (context.datasetIndex === 2) { return context.parsed.y + ' °C'; }";
+        $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' °C'; }";
         $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
+        $datasetIndex++;
+    }
+    if ($feed_measured) {
+        $feed_dataset = ",{
+                label: 'Einspeisung',
+                yAxisID: 'y_feed',
+                data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
+                fill: true,
+                borderWidth: 2,
+                backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
+                borderColor: [ 'rgba(127, 255, 0, 1)' ],
+            }";
+        $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; }";
+        $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
+        $datasetIndex++;
     }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
@@ -257,29 +303,30 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         type: 'line',
         data: {
             datasets: [{
-                label: 'Leistung',
+                label: '".($feed_measured ? 'Bezug' : 'Leistung')."',
                 yAxisID: 'y_p',
                 data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-                backgroundColor: [ 'rgba(109, 120, 173, 0.7)' ],
+                backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
-            },{
-                label: '$produce_consume',
+            }{$feed_dataset},{
+                label: '".($feed_measured ? 'Verbrauch' : $produce_consume)."',
                 yAxisID: 'y_wh',
                 data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-            }$t_dataset]
+            }{$t_dataset}]
         },
         options: {
             plugins: {
                 legend: { display: true },
-                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip } } }
+                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip $feed_tooltip} } }
             },
             scales: { 
                 y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
-                y_wh: { display: false, suggestedMin: 0,$axisY_max_wh },
+                y_wh: { display: false, suggestedMin: 0 },
+                $feed_scale
                 $t_scale
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
@@ -428,7 +475,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-                backgroundColor: [ 'rgba(109, 120, 173, 0.7)' ],
+                backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
             }]
         },
@@ -547,7 +594,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 data: ".json_encode($chart_stats_this_year, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-                backgroundColor: [ 'rgba(109, 120, 173, 0.7)' ],
+                backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
             }]
         },
