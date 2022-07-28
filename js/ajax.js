@@ -11,6 +11,11 @@ function ajax_update() {
                 document.getElementById('temp').innerHTML = data[3];
                 temp_title = '/ ' + data[3] + ' °C ';
             }
+            for (i = 4; i < data.length; i++) {
+                if (data[i]) {
+                    document.getElementById('l'+(i-3)).innerHTML = data[i];
+                }
+            }
             document.title = data[2] + ' W ' + temp_title + '[' + data[1] + ' ' + data[0] + ']';
         }
     };

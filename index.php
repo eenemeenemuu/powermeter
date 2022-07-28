@@ -9,7 +9,13 @@ if (!$use_cache || isset($_GET['nocache'])) {
     }
     $stats = array();
     foreach ($stats_array as $value) {
-        $stats[] = $value;
+        if (is_array($value)) {
+            foreach ($value as $array_value) {
+                $stats[] = $array_value;
+            }
+        } else {
+            $stats[] = $value;
+        }
     }
 } else {
     $stats = explode (',', file_get_contents($log_file_dir.'stats.txt'));
@@ -27,6 +33,11 @@ echo '<style>body { background-color: #252525; } td { background-color: white; w
 echo '</head><body>';
 echo '<table width="100%"><tr><td align="center"><table>';
 echo '<tr><td class="r">Aktuelle Leistung:</td><td><span id="power">'.$stats[2].'</span> W</td></tr>';
+if (isset($stats[4])) {
+    for ($i = 4; $i < count($stats); $i++) {
+        echo '<tr><td class="r">L'.($i-3).':</td><td><span id="l'.($i-3).'">'.$stats[$i].'</span> W</td></tr>';
+    }
+}
 if (isset($stats[3]) && $stats[3] !== '') {
     echo '<tr><td class="r">Temperatur:</td><td><span id="temp">'.$stats[3].'</span> °C</td></tr>';
 }
