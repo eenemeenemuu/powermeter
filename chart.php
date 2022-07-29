@@ -138,10 +138,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 if ($value['p'] < 0) {
                     $feed_measured = true;
                     $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
-                    $dataPoints_feed[] = pm_round(abs($value['p']));
+                    $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round(abs($value['p'])));
                 } else {
                     $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
-                    $dataPoints_feed[] = 0;
+                    $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
                 }
                 $dataPoints_wh[] = pm_round($power_stats['wh']);
                 $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
