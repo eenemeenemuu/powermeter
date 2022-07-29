@@ -203,6 +203,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
     }
     $wh = pm_round($power_stats['wh'], true);
+    $wh_feed = pm_round($power_stats['wh_feed'], true);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['last'] = str_pad($power_stats['last']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['last']['s'], 2, 0, STR_PAD_LEFT);
     $power_stats['peak']['p'] = pm_round($power_stats['peak']['p'], true);
@@ -249,7 +250,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     } else {
         $axisY_max = " max: ".(ceil($power_stats['peak']['p']/100)*100).",";
     }
-    echo '<title>'.$date.' ('.$produce_consume.': '.$wh.' Wh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
+    echo '<title>'.$date.' (';
+    if ($feed_measured) {
+        echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh';
+    } else {
+        echo $produce_consume.': '.$wh.' Wh';
+    }
+    echo ')</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="expand" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsübersicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
@@ -266,6 +273,34 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo '</div></div>';
     $datasetIndex = 2;
+    if ($feed_measured) {
+        $feed_dataset = ",{
+                label: 'Einspeisung',
+                yAxisID: 'y_feed',
+                data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
+                fill: true,
+                borderWidth: 2,
+                backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
+                borderColor: [ 'rgba(127, 255, 0, 1)' ],
+            }";
+        $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; } ";
+        $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
+        $datasetIndex++;
+
+        $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
+        $wh_feed_dataset = ",{
+                label: 'Einspeisung (Summe)',
+                yAxisID: 'y_wh_feed',
+                data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
+                fill: true,
+                borderWidth: 2,
+                backgroundColor: [ 'rgba(127, 255, 0, 0.15)' ],
+                borderColor: [ 'rgba(127, 255, 0, 0.3)' ],
+            }";
+        $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' Wh'; } ";
+        $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },";
+        $datasetIndex++;
+    }
     if ($display_temp && $temp_measured) {
         $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
         $min = ceil(min($dataPoints_t_wo_null)) - 1;
@@ -282,20 +317,6 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
         $datasetIndex++;
     }
-    if ($feed_measured) {
-        $feed_dataset = ",{
-                label: 'Einspeisung',
-                yAxisID: 'y_feed',
-                data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
-                fill: true,
-                borderWidth: 2,
-                backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
-                borderColor: [ 'rgba(127, 255, 0, 1)' ],
-            }";
-        $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; }";
-        $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
-        $datasetIndex++;
-    }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
     var ctx = document.getElementById('myChart');
@@ -310,23 +331,26 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 borderWidth: 2,
                 backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                 borderColor: [ 'rgba(109, 120, 173, 1)' ],
-            }{$feed_dataset},{
-                label: '".($feed_measured ? 'Verbrauch' : $produce_consume)."',
+            },{
+                label: '".($feed_measured ? 'Bezug (Summe)' : $produce_consume)."',
                 yAxisID: 'y_wh',
                 data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                 fill: true,
                 borderWidth: 2,
-            }{$t_dataset}]
+                backgroundColor: [ 'rgba(109, 120, 173, 0.15)' ],
+                borderColor: [ 'rgba(109, 120, 173, 0.3)' ],
+            }{$feed_dataset}{$wh_feed_dataset}{$t_dataset}]
         },
         options: {
             plugins: {
                 legend: { display: true },
-                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } $t_tooltip $feed_tooltip} } }
+                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
             },
             scales: { 
                 y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
-                y_wh: { display: false, suggestedMin: 0 },
+                y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
                 $feed_scale
+                $wh_feed_scale
                 $t_scale
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
@@ -346,7 +370,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />'.$produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | Messwerte zusammenfassen: <select id="res" name="res" onchange="this.form.submit();">';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />';
+    if ($feed_measured) {
+        echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh';
+    } else {
+        echo $produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'];
+    }
+    echo ' | Messwerte zusammenfassen: <select id="res" name="res" onchange="this.form.submit();">';
     foreach (array('-1', '1', '2', '3', '4', '5', '6', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
