@@ -106,6 +106,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $dataPoints_wh = array();
     $dataPoints_wh_feed = array();
     $dataPoints_feed = array();
+    $dataPoints_y_max = 0;
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
     $power_details = array();
     $power_details_wh = array();
@@ -142,6 +143,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 } else {
                     $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
                     $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
+                }
+                if (abs($value['p']) > $dataPoints_y_max) {
+                    $dataPoints_y_max = abs($value['p']);
                 }
                 $dataPoints_wh[] = pm_round($power_stats['wh']);
                 $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
@@ -180,15 +184,21 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     }
                 }
                 if (count($p_res)) {
-                    $y = pm_round(array_sum($p_res) / count($p_res));
+                    $y = array_sum($p_res) / count($p_res);
+                    if ($y > $dataPoints_y_max) {
+                        $dataPoints_y_max = $y;
+                    }
                 }
-                $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => $y);
+                $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y));
 
                 if (count($p_res_feed)) {
                     $feed_measured = true;
-                    $y_feed = pm_round(array_sum($p_res_feed) / count($p_res_feed));
+                    $y_feed = abs(array_sum($p_res_feed) / count($p_res_feed));
+                    if ($y_feed > $dataPoints_y_max) {
+                        $dataPoints_y_max = $y_feed;
+                    }
                 }
-                $dataPoints_feed[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => abs($y_feed));
+                $dataPoints_feed[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y_feed));
 
                 $dataPoints_wh[] = pm_round($power_stats['wh']);
                 $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
@@ -248,7 +258,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     } else {
-        $axisY_max = " max: ".(ceil($power_stats['peak']['p']/100)*100).",";
+        $axisY_max = " max: ".(ceil($dataPoints_y_max/100)*100).",";
     }
     echo '<title>'.$date.' (';
     if ($feed_measured) {
