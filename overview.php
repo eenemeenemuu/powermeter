@@ -20,8 +20,8 @@ if ($_GET['update'] == 'missing') {
             $chart_details_file_content[] = $stat_parts[0];
         }
     }
-    for ($i = count($files); $i >= 0; $i--) {
-        if (!in_array($files[$i]['date'], $chart_stats_file_content) || !in_array($files[$i]['date'], $chart_details_file_content)) {
+    for ($i = count($files); $i > 0; $i--) {
+        if (!in_array($files[$i]['date'], $chart_stats_file_content) || ($power_details_resolution && !in_array($files[$i]['date'], $chart_details_file_content))) {
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http';
             file_get_contents($protocol.'://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['PHP_SELF']).'/chart.php?file='.$files[$i]['date']);
         }
