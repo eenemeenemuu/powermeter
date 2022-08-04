@@ -62,7 +62,18 @@ foreach ($chart_stats_month as $year => $months) {
 }
 echo '</table><br />';
 
-echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.$produce_consume.'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+$feed_measured = false;
+foreach ($chart_stats as $data) {
+    if (isset($data[6])) {
+        $feed_measured = true;
+        break;
+    }
+}
+
+echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.($feed_measured ? 'Bezug' : $produce_consume).'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+if ($feed_measured) {
+    echo '<th>Einspeisung<br />(Wh)</th>';
+}
 for ($i = 0; $i < $power_details_max_count; $i++) {
     echo '<th>'.($i ? '&ge;' : '&gt;').' '.$i * $power_details_resolution.' W</th>';
 }
@@ -72,6 +83,9 @@ $file_dates_w_stats_data = array_unique(array_merge($file_dates, array_keys($cha
 rsort($file_dates_w_stats_data);
 foreach ($file_dates_w_stats_data as $date) {
     echo "<tr><td>".(in_array($date, $file_dates) ? "<a href=\"chart.php?file={$date}\">{$date}</a>" : $date)."</td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
+    if ($feed_measured) {
+        echo "<td>".(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : '-')."</td>";
+    }
     for ($i = 0; $i < $power_details_max_count; $i++) {
         echo '<td>'.$power_details[$date][$i * $power_details_resolution].'</td>';
     }

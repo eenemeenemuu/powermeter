@@ -227,7 +227,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         if (file_exists($log_file_dir.$file)) {
             foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
-                if ($stat_parts[0] == $files[$pos]['date'] ) {
+                if ($stat_parts[0] == $files[$pos]['date']) {
                     $line .= "\n";
                     if ($line != $data) {
                         $contents = file_get_contents($log_file_dir.$file);
@@ -245,7 +245,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
     }
     if ($pos > 0 && $t1 == 0 && $t2 == 23) {
-        save_stats('chart_stats.csv', "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}\n");
+        $stats_str = "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}";
+        if ($power_stats['wh_feed']) {
+            $stats_str .= ','.$wh_feed;
+        }
+        save_stats('chart_stats.csv', $stats_str."\n");
         if ($power_details) {
             save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos]['date'].','.serialize($power_details)."\n");
         }
