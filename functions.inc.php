@@ -214,9 +214,12 @@ function pm_scan_chart_stats() {
             $chart_stats[$stat_parts[0]] = $stat_parts;
             $date_parts = explode('-', $stat_parts[0]);
             $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
+            if (isset($stat_parts[6])) {
+                $chart_stats_month_feed[$date_parts[0]][$date_parts[1]] += $stat_parts[6];
+            }
         }
     }
-    return [$chart_stats, $chart_stats_month];
+    return [$chart_stats, $chart_stats_month, $chart_stats_month_feed];
 }
 
 //EOF

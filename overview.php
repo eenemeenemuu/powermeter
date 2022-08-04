@@ -28,8 +28,17 @@ if ($_GET['update'] == 'missing') {
     }
 }
 
-list($chart_stats, $chart_stats_month) = pm_scan_chart_stats();
+list($chart_stats, $chart_stats_month, $chart_stats_month_feed) = pm_scan_chart_stats();
 krsort($chart_stats_month);
+krsort($chart_stats_month_feed);
+
+$feed_measured = false;
+foreach ($chart_stats as $data) {
+    if (isset($data[6])) {
+        $feed_measured = true;
+        break;
+    }
+}
 
 $power_details_max_count = 0;
 if ($power_details_resolution) {
@@ -45,7 +54,7 @@ if ($power_details_resolution) {
 echo '<link rel="stylesheet" href="css/tablesort.css"><script src="js/tablesort.min.js"></script><script src="js/tablesort.number.min.js"></script>';
 echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body>🔌 <a href=".">Zur aktuellen Leistungsanzeige</a><br /><br />';
 
-echo '<table border="1"><tr><td colspan="14" align="center">'.$produce_consume.' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
+echo '<table border="1"><tr><td colspan="14" align="center">'.($feed_measured ? 'Bezug' : $produce_consume).' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
 foreach ($chart_stats_month as $year => $months) {
     echo '<tr><td><strong>'.$year.'</strong></td>';
     $month_array = array('01' => '', '02' => '', '03' => '', '04' => '', '05' => '', '06' => '', '07' => '', '08' => '', '09' => '', '10' => '', '11' => '', '12' => '');
@@ -62,12 +71,23 @@ foreach ($chart_stats_month as $year => $months) {
 }
 echo '</table><br />';
 
-$feed_measured = false;
-foreach ($chart_stats as $data) {
-    if (isset($data[6])) {
-        $feed_measured = true;
-        break;
+if ($feed_measured) {
+    echo '<table border="1"><tr><td colspan="14" align="center">Einspeisung pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
+    foreach ($chart_stats_month_feed as $year => $months) {
+        echo '<tr><td><strong>'.$year.'</strong></td>';
+        $month_array = array('01' => '', '02' => '', '03' => '', '04' => '', '05' => '', '06' => '', '07' => '', '08' => '', '09' => '', '10' => '', '11' => '', '12' => '');
+        $year_sum = 0;
+        foreach ($months as $month => $value) {
+            $month_array[$month] = $value;
+            $year_sum += $value;
+        }
+        foreach ($month_array as $key => $value) {
+            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.round($value/1000, 2).'</a>' : '-').'</td>';
+        }
+        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.'">'.round($year_sum/1000, 2) : '-').'</a></td>';
+        echo '</tr>';
     }
+    echo '</table><br />';
 }
 
 echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.($feed_measured ? 'Bezug' : $produce_consume).'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
