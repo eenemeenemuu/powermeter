@@ -233,9 +233,9 @@ function pm_print_monthly_overview($header, $data) {
             $year_sum += $value;
         }
         foreach ($month_array as $key => $value) {
-            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.round($value/1000, 2).'</a>' : '-').'</td>';
+            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.number_format($value/1000, 2, '.', '').'</a>' : '-').'</td>';
         }
-        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.'">'.round($year_sum/1000, 2) : '-').'</a></td>';
+        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.'">'.number_format($year_sum/1000, 2, '.', '') : '-').'</a></td>';
         echo '</tr>';
     }
     echo '</table><br />';
