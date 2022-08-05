@@ -261,8 +261,18 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
-    } else {
-        $axisY_max = " max: ".(ceil($dataPoints_y_max/100)*100).",";
+    } elseif ($feed_measured) {
+        $multiplier = 1;
+        while (!$ceil) {
+            foreach ([1, 2, 5] as $i) {
+                if ($dataPoints_y_max < $i * $multiplier) {
+                    $ceil = $i * $multiplier / 10;
+                    break;
+                }
+            }
+            $multiplier *= 10;
+        }
+        $axisY_max = " max: ".(ceil($dataPoints_y_max/$ceil)*$ceil).",";
     }
     echo '<title>'.$date.' (';
     if ($feed_measured) {
