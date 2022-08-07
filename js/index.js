@@ -19,10 +19,33 @@ function ajax_update() {
             document.title = data[2] + ' W ' + temp_title + '[' + data[1] + ' ' + data[0] + ']';
         }
     };
-    xhttp.open("GET", "index.php?ajax", true);
+    xhttp.open('GET', 'index.php?ajax', true);
     xhttp.send();
 }
 
 window.onload = function() {
     setInterval(ajax_update, refresh_rate);
+    set_colors();
+}
+
+function set_colors() {
+    if (document.getElementById('dark_mode').checked) {
+        var color1 = 'black';
+        var color2 = '#DCDCDC';
+        var bodycolor = 'black';
+    } else {
+        var color1 = 'white';
+        var color2 = 'black';
+        var bodycolor = '#252525';
+    }
+    document.body.style.backgroundColor = bodycolor;
+    var td = document.getElementsByTagName('td');
+    for (i = 0; i < td.length; i++) {
+        td[i].style.backgroundColor = color1;
+        td[i].style.color = color2;
+    }
+    var a = document.getElementsByTagName('a');
+    for (i = 0; i < a.length; i++) {
+        a[i].style.color = color2;
+    } 
 }
