@@ -65,7 +65,7 @@ if ($feed_measured) {
     echo '<th>Einspeisung<br />(Wh)</th>';
 }
 for ($i = 0; $i < $power_details_max_count; $i++) {
-    echo '<th>&lt; '.($i+1) * $power_details_resolution.' W</th>';
+    echo '<th>&lt;&nbsp;'.($i+1) * $power_details_resolution.'&nbsp;W<br />(Wh)</th>';
 }
 echo '</tr></thead><tbody>';
 
@@ -77,7 +77,7 @@ foreach ($file_dates_w_stats_data as $date) {
         echo '<td class="v">'.(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : (isset($chart_stats[$date]) ? '-' : '')).'</td>';
     }
     for ($i = 0; $i < $power_details_max_count; $i++) {
-        echo '<td>'.($power_details_wh3[$date][$i * $power_details_resolution] ? pm_round($power_details_wh3[$date][$i * $power_details_resolution]).' Wh' : '').'</td>';
+        echo '<td class="v">'.($power_details_wh3[$date][$i * $power_details_resolution] ? pm_round($power_details_wh3[$date][$i * $power_details_resolution]) : '').'</td>';
     }
     echo '</tr>';
 }
