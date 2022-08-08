@@ -45,8 +45,9 @@ if ($power_details_resolution) {
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_details_'.$power_details_resolution.'.csv')) as $line) {
         $stat_parts = explode(',', $line);
         if ($stat_parts[0]) {
-            $power_details[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
-            $power_details_max_count = max(count($power_details[$stat_parts[0]]), $power_details_max_count);
+            $power_details_wh[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
+            list($power_details_wh2[$stat_parts[0]], $power_details_wh3[$stat_parts[0]]) = pm_calculate_power_details($power_details_wh[$stat_parts[0]]);
+            $power_details_max_count = max(count($power_details_wh[$stat_parts[0]]), $power_details_max_count);
         }
     }
 }
@@ -64,7 +65,7 @@ if ($feed_measured) {
     echo '<th>Einspeisung<br />(Wh)</th>';
 }
 for ($i = 0; $i < $power_details_max_count; $i++) {
-    echo '<th>'.($i ? '&ge;' : '&gt;').' '.$i * $power_details_resolution.' W</th>';
+    echo '<th>&lt; '.($i+1) * $power_details_resolution.' W</th>';
 }
 echo '</tr></thead><tbody>';
 
@@ -76,7 +77,7 @@ foreach ($file_dates_w_stats_data as $date) {
         echo '<td class="v">'.(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : (isset($chart_stats[$date]) ? '-' : '')).'</td>';
     }
     for ($i = 0; $i < $power_details_max_count; $i++) {
-        echo '<td>'.$power_details[$date][$i * $power_details_resolution].'</td>';
+        echo '<td>'.($power_details_wh3[$date][$i * $power_details_resolution] ? pm_round($power_details_wh3[$date][$i * $power_details_resolution]).' Wh' : '').'</td>';
     }
     echo '</tr>';
 }

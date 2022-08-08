@@ -251,7 +251,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
         save_stats('chart_stats.csv', $stats_str."\n");
         if ($power_details) {
-            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos]['date'].','.serialize($power_details)."\n");
+            save_stats('chart_details_'.$power_details_resolution.'.csv', $files[$pos]['date'].','.serialize($power_details_wh)."\n");
         }
         if (!$file_is_compressed) {
             $files[$pos]['name'] = compress_file($files[$pos]['name'], $lines);
@@ -436,20 +436,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution) {
-        $key_last = false;
-        $power_details_wh2 = $power_details_wh;
-        foreach ($power_details_wh as $key => $value) {
-            if ($key_last !== false) {
-                $power_details_wh2[$key_last] -= $value;
-            }
-            $key_last = $key;
-        }
-        $power_details_wh3_sum = 0;
-        $power_details_wh3 = array();
-        foreach ($power_details_wh2 as $key => $value) {
-            $power_details_wh3_sum += $value;
-            $power_details_wh3[$key] = $power_details_wh3_sum;
-        }
+        list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? 'Bezug' : $produce_consume).':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
         foreach ($power_details as $key => $value) {

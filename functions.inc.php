@@ -241,4 +241,22 @@ function pm_print_monthly_overview($header, $data) {
     echo '</table><br />';
 }
 
+function pm_calculate_power_details($power_details_wh) {
+    $key_last = false;
+    $power_details_wh2 = $power_details_wh;
+    foreach ($power_details_wh as $key => $value) {
+        if ($key_last !== false) {
+            $power_details_wh2[$key_last] -= $value;
+        }
+        $key_last = $key;
+    }
+    $power_details_wh3_sum = 0;
+    $power_details_wh3 = [];
+    foreach ($power_details_wh2 as $key => $value) {
+        $power_details_wh3_sum += $value;
+        $power_details_wh3[$key] = $power_details_wh3_sum;
+    }
+    return [$power_details_wh2, $power_details_wh3];
+}
+
 //EOF
