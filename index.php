@@ -44,7 +44,7 @@ if (isset($stats[3]) && $stats[3] !== '') {
 echo '<tr><td class="r">Uhrzeit:</td><td><span id="time">'.$stats[1].'</span></td></tr>';
 echo '<tr><td class="r">Datum:</td><td><span id="date">'.$stats[0].'</span></td></tr>';
 echo '<tr><td class="r" valign="top">'.$produce_consume.':</td><td><p><a href="chart.php?today">Heute</a></p><p><a href="chart.php?yesterday">Gestern</a></p><p><a href="overview.php">Übersicht</a></p></td></tr>';
-echo '<tr><td class="r">Dark mode:</td><td><input id="dark_mode" type="checkbox" onclick="set_colors()" /></td></tr>';
+echo '<tr><td class="r">Dark mode:</td><td><input id="dark_mode" type="checkbox" onclick="set_colors();"'.(isset($_GET['dm']) ? ' checked="checked"' : '').' /></td></tr>';
 echo '</table></td></tr></table>';
 echo '</body></html>';
 
