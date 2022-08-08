@@ -451,7 +451,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $power_details_wh3[$key] = $power_details_wh3_sum;
         }
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
-        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
+        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? 'Bezug' : $produce_consume).':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
         foreach ($power_details as $key => $value) {
             echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.pm_round($power_details_wh[$key], true).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.pm_round($power_details_wh2[$key], true).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.pm_round($power_details_wh3[$key], true).' Wh</div></div>';
         }
