@@ -24,14 +24,6 @@ function put_contents_external($stats_string) {
     }
 }
 
-function create_context($stats_string) {
-    global $host_auth_key;
-    $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
-    $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
-    $context = stream_context_create($opts);
-    return $context;
-}
-
 if (isset($_POST['stats']) || isset($_GET['stats'])) {
     $key = isset($_POST['key']) ? $_POST['key'] : $_GET['key'];
     if ($key == $host_auth_key) {
