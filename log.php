@@ -27,11 +27,17 @@ function put_contents_external($stats_string) {
 if (isset($_POST['stats']) || isset($_GET['stats'])) {
     $key = isset($_POST['key']) ? $_POST['key'] : $_GET['key'];
     if ($key == $host_auth_key) {
-        $stats_string = isset($_POST['stats']) ? $_POST['stats'] : urldecode(unserialize($_GET['stats']));
-        if (file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
+        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,4}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?'];
+        if (isset($_POST['stats'])) {
+            $stats_string = $_POST['stats'];
+        } elseif (@unserialize($_GET['stats']) !== false) {
+            $stats_string = urldecode(unserialize($_GET['stats']));
+        } elseif (isset($_GET['stats']) && preg_match('/'.implode(',', array_slice($regex_check, 0, 3)).'/', $_GET['stats'])) {
+            $stats_string = $_GET['stats'];
+        }
+        if (!$stats_string || file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
             die();
         }
-        $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,4}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?', '[\-0-9]{1,6}(\.[0-9]{1,3})?'];
         foreach (explode(",", $stats_string) as $stat) {
             if ($stat && !preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
                 die();
