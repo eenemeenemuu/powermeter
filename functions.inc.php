@@ -147,7 +147,7 @@ function GetStats() {
             }
         }
 
-        $timeZone = new DateTimeZone('Europe/London');
+        $timeZone = new DateTimeZone('Europe/Helsinki');
         $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $stats_timestamp, $timeZone);
         $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
         $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
