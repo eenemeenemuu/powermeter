@@ -1,6 +1,6 @@
 <?php
 // basic configuration - mandatory
-$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly, envtec
+$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly, envtec, ahoydtu
 $host = 'tasmotaplug4'; // host name or ip address of measuring device (not needed for envtec)
 $produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
 $refresh_rate = 2; // refresh rate of index.php in seconds

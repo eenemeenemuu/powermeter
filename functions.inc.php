@@ -162,6 +162,19 @@ function GetStats() {
         $stats_array['power'] = pm_round($stats_array['power'], true, 2);
 
         return $stats_array;
+    } elseif ($device == 'ahoydtu') {
+        $data = json_decode(file_get_contents('http://'.$host.'/api/live'));
+        if ($data) {
+            $time = $data->inverter[0]->ts_last_success;
+            $stats_array['date'] = date("d.m.Y", $time);
+            $stats_array['time'] = date("H:i:s", $time);
+            $stats_array['power'] = pm_round($data->inverter[0]->ch[0][2], true, 1);
+            $stats_array['temp'] = pm_round($data->inverter[0]->ch[0][5], true, 1);
+
+            return $stats_array;
+        } else {
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
+        }
     } else {
         return (array('error', 'Invalid device configured.'));
     }
