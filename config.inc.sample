@@ -21,6 +21,7 @@ $station_id = ''; // station ID
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
 $log_rate = 6; // how often should data be gathered per minute
 $use_cache = false; // use latest data from log file to display power on index.php; can also be disabled dynamically with parameter 'nocache'
+$log_extra_array = 0; // store array of last x measurements in separate file (e.g. to use them in another app); set to 0 to disable
 
 // chart configuration
 $fix_axis_y = 0; // fix chart to specific value, set to 0 to calculate automatically
