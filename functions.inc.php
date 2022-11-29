@@ -164,7 +164,7 @@ function GetStats() {
         return $stats_array;
     } elseif ($device == 'ahoydtu') {
         $data = json_decode(file_get_contents('http://'.$host.'/api/live'));
-        if ($data) {
+        if ($data->inverter[0]->ts_last_success) {
             $time = $data->inverter[0]->ts_last_success;
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
