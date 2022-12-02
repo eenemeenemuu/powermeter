@@ -74,7 +74,7 @@ rsort($file_dates_w_stats_data);
 foreach ($file_dates_w_stats_data as $date) {
     echo "<tr><td>".(in_array($date, $file_dates) ? "<a href=\"chart.php?file={$date}\">{$date}</a>" : $date)."</td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
     if ($feed_measured) {
-        echo '<td class="v">'.(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : (isset($chart_stats[$date]) ? '-' : '')).'</td>';
+        echo '<td class="v">'.(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : (isset($chart_stats[$date]) ? '0' : '')).'</td>';
     }
     for ($i = 0; $i < $power_details_max_count; $i++) {
         echo '<td class="v">'.($power_details_wh3[$date][$i * $power_details_resolution] ? pm_round($power_details_wh3[$date][$i * $power_details_resolution], true) : '').'</td>';
