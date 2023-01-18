@@ -47,10 +47,11 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         file_put_contents($log_file_dir.'stats.txt', $stats_string);
     }
 } else {
-    for ($i = 0; $i < $log_rate; $i++) {
+    $this_Hi = date('Hi');
+    while (date('Hi') == $this_Hi) {
         $get_stats_start = microtime(true);
         $stats = GetStats();
-        if ($stats[0] != 'error') {
+        if (!(isset($stats[0]) && $stats[0] == 'error')) {
             $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
             if (isset($stats['temp'])) {
                 $stats_string .= ','.$stats['temp'];
@@ -63,7 +64,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
                 file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
                 file_put_contents($log_file_dir.'stats.txt', $stats_string);
-                if ($log_extra_array) {
+                if (isset($log_extra_array) && $log_extra_array > 0) {
                     $power_array = json_decode(file_get_contents($log_file_dir.'power_array'));
                     $power_array[] = $stats_string;
                     if (count($power_array) > $log_extra_array) {
@@ -76,11 +77,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                 }
             }
         }
-        if ($log_rate > 1 && $i < $log_rate-1) {
-            $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
-            if ($microseconds > 0) {
-                usleep($microseconds);
-            }
+        $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
+        if ($microseconds > 0) {
+            usleep($microseconds);
         }
     }
     // Send buffered data to external host if it's available again
