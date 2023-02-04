@@ -175,6 +175,19 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
+    } elseif ($device == 'esp-epever-controller') {
+        $time = time();
+        $data = json_decode(file_get_contents('http://'.$host.'/AllJsonData', false, stream_context_create(['http'=>['timeout' => 1]])));
+        if ($data->BatteryV) {
+            $stats_array['date'] = date("d.m.Y", $time);
+            $stats_array['time'] = date("H:i:s", $time);
+            $stats_array['power'] = pm_round($data->PanelP, true, 2);
+            $stats_array['temp'] = pm_round($data->BatteryV, true, 2);
+
+            return $stats_array;
+        } else {
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
+        }
     } else {
         return (array('error', 'Invalid device configured.'));
     }
