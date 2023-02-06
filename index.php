@@ -1,8 +1,8 @@
 <?php
 require('config.inc.php');
+require('functions.inc.php');
 
 if (!$use_cache || isset($_GET['nocache'])) {
-    require('functions.inc.php');
     $stats_array = GetStats();
     if ($stats_array[0] == 'error') {
         die($stats_array[1]);
@@ -26,7 +26,7 @@ if (isset($_GET['ajax'])) {
     die();
 }
 
-echo '<html><head><title>'.$stats[2].' W '.(isset($stats[3]) && $stats[3] !== '' ? '/ '.$stats[3].' °C ' : '').'['.$stats[1].' '.$stats[0].']</title>';
+echo '<html><head><title>'.$stats[2].' W '.(isset($stats[3]) && $stats[3] !== '' ? '/ '.$stats[3].' '.$temp_unit.' ' : '').'['.$stats[1].' '.$stats[0].']</title>';
 echo '<link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
 echo '<script>refresh_rate = '.($refresh_rate*1000).';</script><script src="js/index.js"></script>';
 echo '<style>td { width: 50%; padding: 5px; } td.r { text-align: right; } span { font-size: x-large; }</style>';
@@ -39,7 +39,7 @@ if (isset($stats[4])) {
     }
 }
 if (isset($stats[3]) && $stats[3] !== '') {
-    echo '<tr><td class="r">Temperatur:</td><td><span id="temp">'.$stats[3].'</span> °C</td></tr>';
+    echo '<tr><td class="r">'.$temp_label.':</td><td><span id="temp">'.$stats[3].'</span> <span id="temp_unit">'.$temp_unit.'</span></td></tr>';
 }
 echo '<tr><td class="r">Uhrzeit:</td><td><span id="time">'.$stats[1].'</span></td></tr>';
 echo '<tr><td class="r">Datum:</td><td><span id="date">'.$stats[0].'</span></td></tr>';

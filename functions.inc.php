@@ -1,5 +1,8 @@
 <?php
 
+$temp_unit = $device == 'esp-epever-controller' ? 'V' : '°C';
+$temp_label = $device == 'esp-epever-controller' ? 'Spannung' : 'Temperatur';
+
 function GetSessionId ($user, $pass) {
     global $host;
     $text = file_get_contents('http://'.$host.'/login_sid.lua');
@@ -33,7 +36,12 @@ function GetStats() {
             if (!preg_match('/<voltage><stats count="[0-9]+" grid="[0-9]+"(?: datatime="[0-9]+")?>([0-9]+),/', $stats)) {
                 return (array('error', 'FRITZ!DECT seems to be offline, please check.'));
             }
-
+/*
+            if (preg_match('/<power><stats count="[0-9]+" grid="[0-9]+" datatime="([0-9]+)">[0-9]+,/', $stats, $match)) {
+                $stats_array['date'] = date("d.m.Y", $match[1]);
+                $stats_array['time'] = date("H:i:s", $match[1]);
+            }
+*/
             preg_match('/<power><stats count="[0-9]+" grid="[0-9]+"(?: datatime="[0-9]+")?>([0-9]+),/', $stats, $match);
             $power = $match[1];
             $stats_array['power'] = pm_round($power/100, true, 2);

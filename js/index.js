@@ -9,14 +9,14 @@ function ajax_update() {
             document.getElementById('power').innerHTML = data[2];
             if (data[3]) {
                 document.getElementById('temp').innerHTML = data[3];
-                temp_title = '/ ' + data[3] + ' °C ';
+                temp_title = ' / ' + data[3] + ' ' + document.getElementById('temp_unit').innerHTML;
             }
             for (i = 4; i < data.length; i++) {
                 if (data[i]) {
                     document.getElementById('l'+(i-3)).innerHTML = data[i];
                 }
             }
-            document.title = data[2] + ' W ' + temp_title + '[' + data[1] + ' ' + data[0] + ']';
+            document.title = data[2] + ' W' + temp_title + ' [' + data[1] + ' ' + data[0] + ']';
         }
     };
     xhttp.open('GET', 'index.php?ajax', true);

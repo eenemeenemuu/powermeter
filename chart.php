@@ -330,15 +330,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $min = ceil(min($dataPoints_t_wo_null)) - 1;
         $max = floor(max($dataPoints_t_wo_null)) + 1;
         $t_dataset = ",{
-                label: 'Temperatur',
+                label: '$temp_label',
                 yAxisID: 'y_t',
                 data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                 fill: false,
                 borderWidth: 2,
                 borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
             }";
-        $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' °C'; }";
-        $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' °C'; } } },";
+        $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $temp_unit'; }";
+        $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $temp_unit'; } } },";
         $datasetIndex++;
     }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
