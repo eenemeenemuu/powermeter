@@ -14,9 +14,9 @@ if (!file_put_contents($log_file_dir.'test', 'test')) {
 }
 
 function put_contents_external($stats_string) {
-    global $host_auth_key, $host_external, $log_file_dir;
+    global $host_auth_key, $host_external, $log_file_dir, $log_rate;
     $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
-    $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata]];
+    $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata, 'timeout' => ceil(60/$log_rate)]];
     $context = stream_context_create($opts);
     if (file_get_contents($host_external.'log.php', false, $context) === false) {
         // Buffer data if external host is not available
