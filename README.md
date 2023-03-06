@@ -15,6 +15,10 @@ To record the activity over the day you need to create a cronjob which calls `lo
 ```
 * * * * * curl https://<host name or ip address>/powermeter/log.php
 ```
+or, if you're on the same host
+```
+* * * * * cd /path/to/powermeter/ && php check.php
+```
 
 ## Statistics
 When viewing the chart, the statistics of **past** days are saved to `chart_stats.csv`. You can automate that task with a cronjob that runs once a day, like
