@@ -32,5 +32,6 @@ $power_details_resolution = 50; // display the duration the device produces/cons
 // additional logging configuration
 $host_external = 'https://example.com/my_folder/'; // additional external host for logging and display - must end with trailing slash (/)! - keep empty or comment out to disable
 $host_auth_key = 'abc123'; // auth key must match on external host
+$log_external_only = false; // set to "true" if you don't want to keep the log data on your local device after it has been successfully transmitted to the external host
 
 //EOF
