@@ -60,11 +60,12 @@ If you like, you can add a file "favicon.png" to the application's root director
 ## Docker
 
 We added a basic Dockerfile.
-
 * Install Docker
 * git checkout
 * Add and edit config.inc.php
 * docker build powermeter -t powermeter
 * docker run -p 80:80 powermeter
-
 //TODO: add crons in Dockerfile
+
+## Credits / used libraries
+* Chart.js (https://github.com/chartjs/Chart.js)
