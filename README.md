@@ -65,7 +65,6 @@ We added a basic Dockerfile.
 * Add and edit config.inc.php
 * docker build powermeter -t powermeter
 * docker run -p 80:80 powermeter
-//TODO: add crons in Dockerfile
 
 ## Credits / used libraries
 * Chart.js (https://github.com/chartjs/Chart.js)
