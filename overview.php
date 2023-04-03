@@ -57,7 +57,7 @@ echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { borde
 
 pm_print_monthly_overview($feed_measured ? 'Bezug' : $produce_consume, $chart_stats_month);
 if ($feed_measured) {
-    pm_print_monthly_overview('Einspeisung', $chart_stats_month_feed);
+    pm_print_monthly_overview('Einspeisung', $chart_stats_month_feed, true);
 }
 
 echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.($feed_measured ? 'Bezug' : $produce_consume).'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';

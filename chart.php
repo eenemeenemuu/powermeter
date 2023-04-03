@@ -445,6 +445,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo '</body></html>';
 } elseif ($_GET['m']) {
+    $index = isset($_GET['feed']) ? 6 : 1;
     $month = htmlentities(trim($_GET['m']));
     list($chart_stats) = pm_scan_chart_stats();
 
@@ -452,7 +453,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $this_month = substr($day, 0, 7);
         $chart_stats_months[] = $this_month;
         if ($this_month == $month) {
-            $chart_stats_this_month[$day] = $data[1];
+            $chart_stats_this_month[$day] = $data[$index];
         }
     }
     $chart_stats_months = array_unique($chart_stats_months);
@@ -489,8 +490,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $axisY_max = " max: $fix_axis_y,";
     }
     $params = '&fix='.$fix_axis_y;
-    echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).'" title="Zur Jahresübersicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<title>'.$month.' ('.(isset($_GET['feed']) ? 'Einspeisung' : $produce_consume).': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresübersicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -561,6 +562,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> Wh (0 = dynamisch)';
 } elseif ($_GET['y']) {
+    $index = isset($_GET['feed']) ? 6 : 1;
     $year = htmlentities(trim($_GET['y']));
     list($chart_stats) = pm_scan_chart_stats();
 
@@ -568,7 +570,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $this_year = substr($day, 0, 4);
         $chart_stats_years[] = $this_year;
         if ($this_year == $year) {
-            $chart_stats_this_year[substr($day, 0, 7)] += $data[1]/1000;
+            $chart_stats_this_year[substr($day, 0, 7)] += $data[$index]/1000;
         }
     }
     $chart_stats_years = array_unique($chart_stats_years);
@@ -608,7 +610,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $axisY_max = " max: $fix_axis_y,";
     }
     $params = '&fix='.$fix_axis_y;
-    echo '<title>'.$year.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    echo '<title>'.$year.' ('.(isset($_GET['feed']) ? 'Einspeisung' : $produce_consume).': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
     echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur '.$produce_consume.'sübersicht">📋</a></div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
@@ -623,6 +625,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    $feed = isset($_GET['feed']) ? '&feed' : '';
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
     var ctx = document.getElementById('myChart');
@@ -656,7 +659,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index];
+            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + '$feed';
         }
     }
     ctx.onmousemove = function(evt) {

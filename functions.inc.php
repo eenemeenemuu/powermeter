@@ -256,7 +256,8 @@ function pm_scan_chart_stats() {
     return [$chart_stats, $chart_stats_month, $chart_stats_month_feed];
 }
 
-function pm_print_monthly_overview($header, $data) {
+function pm_print_monthly_overview($header, $data, $feed = false) {
+    $feed = $feed ? '&feed' : '';
     echo '<table border="1"><tr><td colspan="14" align="center">'.$header.' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
     foreach ($data as $year => $months) {
         echo '<tr><td><strong>'.$year.'</strong></td>';
@@ -267,9 +268,9 @@ function pm_print_monthly_overview($header, $data) {
             $year_sum += $value;
         }
         foreach ($month_array as $key => $value) {
-            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.'">'.number_format($value/1000, 2, '.', '').'</a>' : '-').'</td>';
+            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.$feed.'">'.number_format($value/1000, 2, '.', '').'</a>' : '-').'</td>';
         }
-        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.'">'.number_format($year_sum/1000, 2, '.', '') : '-').'</a></td>';
+        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.$feed.'">'.number_format($year_sum/1000, 2, '.', '') : '-').'</a></td>';
         echo '</tr>';
     }
     echo '</table><br />';
