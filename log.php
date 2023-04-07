@@ -47,6 +47,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         file_put_contents($log_file_dir.'stats.txt', $stats_string);
     }
 } else {
+    $errors = [];
     if ($log_rate > 0) {
         $this_Hi = date('Hi');
         while (date('Hi') == $this_Hi) {
@@ -79,6 +80,8 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                         put_contents_external($stats_string);
                     }
                 }
+            } elseif ($stats[0] == 'error') {
+                $errors[] = $stats[1];
             }
             $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
             if ($microseconds > 0) {
@@ -86,8 +89,13 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             }
         }
     } else {
-        echo 'Please check $log_rate configuration.';
+        $errors[] = 'Please check log rate configuration.';
     }
+
+    if ($errors) {
+        echo 'Errors:<ul><li>'.implode('</li><li>', $errors).'</li></ul>';
+    }
+
     // Send buffered data to external host if it's available again
     if ($host_external && file_exists($log_file_dir.'buffer.txt') && file_get_contents($host_external.'log.php') !== false) {
         $lines = explode("\n", file_get_contents($log_file_dir.'buffer.txt'));
