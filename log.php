@@ -47,42 +47,46 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         file_put_contents($log_file_dir.'stats.txt', $stats_string);
     }
 } else {
-    $this_Hi = date('Hi');
-    while (date('Hi') == $this_Hi) {
-        $get_stats_start = microtime(true);
-        $stats = GetStats();
-        if (!(isset($stats[0]) && $stats[0] == 'error')) {
-            $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
-            if (isset($stats['temp'])) {
-                $stats_string .= ','.$stats['temp'];
-            }
-            if (isset($stats['emeters'])) {
-                foreach ($stats['emeters'] as $emeter) {
-                    $stats_string .= ','.$emeter;
+    if ($log_rate > 0) {
+        $this_Hi = date('Hi');
+        while (date('Hi') == $this_Hi) {
+            $get_stats_start = microtime(true);
+            $stats = GetStats();
+            if (!(isset($stats[0]) && $stats[0] == 'error')) {
+                $stats_string = "{$stats['date']},{$stats['time']},{$stats['power']}";
+                if (isset($stats['temp'])) {
+                    $stats_string .= ','.$stats['temp'];
                 }
-            }
-            if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
-                if (!$log_external_only) {
-                    file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
-                    file_put_contents($log_file_dir.'stats.txt', $stats_string);
-                    if (isset($log_extra_array) && $log_extra_array > 0) {
-                        $power_array = json_decode(file_get_contents($log_file_dir.'power_array'));
-                        $power_array[] = $stats_string;
-                        if (count($power_array) > $log_extra_array) {
-                            array_shift($power_array);
-                        }
-                        file_put_contents($log_file_dir.'power_array', json_encode($power_array));
+                if (isset($stats['emeters'])) {
+                    foreach ($stats['emeters'] as $emeter) {
+                        $stats_string .= ','.$emeter;
                     }
                 }
-                if ($host_external) {
-                    put_contents_external($stats_string);
+                if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
+                    if (!$log_external_only) {
+                        file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
+                        file_put_contents($log_file_dir.'stats.txt', $stats_string);
+                        if (isset($log_extra_array) && $log_extra_array > 0) {
+                            $power_array = json_decode(file_get_contents($log_file_dir.'power_array'));
+                            $power_array[] = $stats_string;
+                            if (count($power_array) > $log_extra_array) {
+                                array_shift($power_array);
+                            }
+                            file_put_contents($log_file_dir.'power_array', json_encode($power_array));
+                        }
+                    }
+                    if ($host_external) {
+                        put_contents_external($stats_string);
+                    }
                 }
             }
+            $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
+            if ($microseconds > 0) {
+                usleep($microseconds);
+            }
         }
-        $microseconds = 60000000/$log_rate-round((microtime(true)-$get_stats_start)*1000000);
-        if ($microseconds > 0) {
-            usleep($microseconds);
-        }
+    } else {
+        echo 'Please check $log_rate configuration.';
     }
     // Send buffered data to external host if it's available again
     if ($host_external && file_exists($log_file_dir.'buffer.txt') && file_get_contents($host_external.'log.php') !== false) {
