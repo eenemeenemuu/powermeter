@@ -102,6 +102,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         unlink($log_file_dir.'buffer.txt');
         foreach ($lines as $stats_string) {
             put_contents_external($stats_string);
+            sleep(1);
         }
     }
 }
