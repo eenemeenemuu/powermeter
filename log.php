@@ -13,9 +13,13 @@ if (!file_put_contents($log_file_dir.'test', 'test')) {
     unlink($log_file_dir.'test');
 }
 
-function put_contents_external($stats_string) {
+function put_contents_external($stats_string, $buffer = false) {
     global $host_auth_key, $host_external, $log_file_dir, $log_rate;
-    $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
+    if ($buffer) {
+        $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key, 'buffer' => '1']);
+    } else {
+        $postdata = http_build_query(['stats' => $stats_string, 'key' => $host_auth_key]);
+    }
     $opts = ['http' => ['method'  => 'POST', 'header'  => 'Content-Type: application/x-www-form-urlencoded', 'content' => $postdata, 'timeout' => ceil(60/$log_rate)]];
     $context = stream_context_create($opts);
     if (file_get_contents($host_external.'log.php', false, $context) === false) {
@@ -44,7 +48,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             }
         }
         file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
-        file_put_contents($log_file_dir.'stats.txt', $stats_string);
+        if (!(isset($_POST['buffer']) && $_POST['buffer'] == '1')) {
+            file_put_contents($log_file_dir.'stats.txt', $stats_string);
+        }
     }
 } else {
     $errors = [];
@@ -101,7 +107,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         $lines = explode("\n", file_get_contents($log_file_dir.'buffer.txt'));
         unlink($log_file_dir.'buffer.txt');
         foreach ($lines as $stats_string) {
-            put_contents_external($stats_string);
+            put_contents_external($stats_string, true);
             sleep(1);
         }
     }
