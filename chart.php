@@ -286,7 +286,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             file_put_contents($log_file_dir.$file, $data, FILE_APPEND);
         }
     }
-    if ($pos > 0 && $t1 == 0 && $t2 == 23) {
+    if ($pos > 0 && $t1 == 0 && $t2 == 23 && !$_GET['3p']) {
         $stats_str = "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}";
         if ($power_stats['wh_feed']) {
             $stats_str .= ','.$wh_feed;
