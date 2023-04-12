@@ -69,6 +69,25 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
         return $file;
     }
+    function get_y_min_max($min_max, $data) {
+        $multiplier = 1;
+        while (!$floor_ceil) {
+            foreach ([1, 2, 5] as $i) {
+                if (abs($data) < $i * $multiplier) {
+                    $floor_ceil = $i * $multiplier / 10;
+                    break;
+                }
+            }
+            $multiplier *= 10;
+        }
+        if ($min_max == 'max') {
+            return " max: ".(ceil($data/$floor_ceil)*$floor_ceil).",";
+        }
+        if ($min_max == 'min') {
+            return " min: ".(floor($data/$floor_ceil)*$floor_ceil).",";
+        }
+        return false;
+    }
     $res = $_GET['res'] ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
@@ -118,7 +137,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         if (trim($line)) {
             $data_this = explode(",", $line);
             $time_parts = explode(":", $data_this[1]);
-            if ($display_temp && isset($data_this[3])) {
+            if ($_GET['3p']) {
+                $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6]);
+            } elseif ($display_temp && isset($data_this[3])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
             } else {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
@@ -135,23 +156,29 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($res == -1) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                power_stats($value);
-                if ($value['p'] < 0) {
-                    $feed_measured = true;
-                    $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
-                    $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round(abs($value['p'])));
+                if ($_GET['3p']) {
+                    $dataPoints_l1[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l1']));
+                    $dataPoints_l2[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l2']));
+                    $dataPoints_l3[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l3']));
                 } else {
-                    $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
-                    $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
-                }
-                if (abs($value['p']) > $dataPoints_y_max) {
-                    $dataPoints_y_max = abs($value['p']);
-                }
-                $dataPoints_wh[] = pm_round($power_stats['wh']);
-                $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
-                if (isset($value['t'])) {
-                    $temp_measured = true;
-                    $dataPoints_t[] = pm_round($value['t']);
+                    power_stats($value);
+                    if ($value['p'] < 0) {
+                        $feed_measured = true;
+                        $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
+                        $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round(abs($value['p'])));
+                    } else {
+                        $dataPoints[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['p']));
+                        $dataPoints_feed[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => 0);
+                    }
+                    if (abs($value['p']) > $dataPoints_y_max) {
+                        $dataPoints_y_max = abs($value['p']);
+                    }
+                    $dataPoints_wh[] = pm_round($power_stats['wh']);
+                    $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
+                    if (isset($value['t'])) {
+                        $temp_measured = true;
+                        $dataPoints_t[] = pm_round($value['t']);
+                    }
                 }
             }
         }
@@ -164,6 +191,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
         for ($h = $t1; $h <= $t2; $h++) {
             for ($m = 0; $m < 60; $m = $m + $res) {
+                $l1_res = array();
+                $l2_res = array();
+                $l3_res = array();
                 $p_res = array();
                 $t_res = array();
                 $p_res_feed = array();
@@ -171,43 +201,55 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 $y_feed = null;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
-                        if ($value['p'] < 0) {
-                            $feed_measured = true;
-                            $p_res_feed[] = $value['p'];
+                        if ($_GET['3p']) {
+                            $l1_res[] = $value['l1'];
+                            $l2_res[] = $value['l2'];
+                            $l3_res[] = $value['l3'];
                         } else {
-                            $p_res[] = $value['p'];
+                            if ($value['p'] < 0) {
+                                $feed_measured = true;
+                                $p_res_feed[] = $value['p'];
+                            } else {
+                                $p_res[] = $value['p'];
+                            }
+                            if (isset($value['t'])) {
+                                $t_res[] = $value['t'];
+                            }
+                            power_stats($value);
                         }
-                        if (isset($value['t'])) {
-                            $t_res[] = $value['t'];
-                        }
-                        power_stats($value);
                     }
                 }
-                if (count($p_res)) {
-                    $y = array_sum($p_res) / count($p_res);
-                    if ($y > $dataPoints_y_max) {
-                        $dataPoints_y_max = $y;
-                    }
-                }
-                $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y));
-
-                if (count($p_res_feed)) {
-                    $feed_measured = true;
-                    $y_feed = abs(array_sum($p_res_feed) / count($p_res_feed));
-                    if ($y_feed > $dataPoints_y_max) {
-                        $dataPoints_y_max = $y_feed;
-                    }
-                }
-                $dataPoints_feed[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y_feed));
-
-                $dataPoints_wh[] = pm_round($power_stats['wh']);
-                $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
-
-                if (count($t_res)) {
-                    $temp_measured = true;
-                    $dataPoints_t[] = pm_round(array_sum($t_res) / count($t_res));
+                if ($_GET['3p']) {
+                    $dataPoints_l1[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l1_res) ? pm_round(array_sum($l1_res) / count($l1_res)) : 0);
+                    $dataPoints_l2[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l2_res) ? pm_round(array_sum($l2_res) / count($l2_res)) : 0);
+                    $dataPoints_l3[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l3_res) ? pm_round(array_sum($l3_res) / count($l3_res)) : 0);
                 } else {
-                    $dataPoints_t[] = null;
+                    if (count($p_res)) {
+                        $y = array_sum($p_res) / count($p_res);
+                        if ($y > $dataPoints_y_max) {
+                            $dataPoints_y_max = $y;
+                        }
+                    }
+                    $dataPoints[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y));
+
+                    if (count($p_res_feed)) {
+                        $feed_measured = true;
+                        $y_feed = abs(array_sum($p_res_feed) / count($p_res_feed));
+                        if ($y_feed > $dataPoints_y_max) {
+                            $dataPoints_y_max = $y_feed;
+                        }
+                    }
+                    $dataPoints_feed[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => pm_round($y_feed));
+
+                    $dataPoints_wh[] = pm_round($power_stats['wh']);
+                    $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
+
+                    if (count($t_res)) {
+                        $temp_measured = true;
+                        $dataPoints_t[] = pm_round(array_sum($t_res) / count($t_res));
+                    } else {
+                        $dataPoints_t[] = null;
+                    }
                 }
             }
         }
@@ -262,17 +304,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     } elseif ($feed_measured) {
-        $multiplier = 1;
-        while (!$ceil) {
-            foreach ([1, 2, 5] as $i) {
-                if ($dataPoints_y_max < $i * $multiplier) {
-                    $ceil = $i * $multiplier / 10;
-                    break;
-                }
-            }
-            $multiplier *= 10;
-        }
-        $axisY_max = " max: ".(ceil($dataPoints_y_max/$ceil)*$ceil).",";
+        $axisY_max = get_y_min_max('max', $dataPoints_y_max);
     }
     echo '<title>'.$date.' (';
     if ($feed_measured) {
@@ -281,7 +313,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo $produce_consume.': '.$wh.' Wh';
     }
     echo ')</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
-    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2;
+    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
@@ -296,111 +328,166 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
-    $datasetIndex = 2;
-    if ($feed_measured) {
-        $feed_dataset = ",{
-                label: 'Einspeisung',
-                yAxisID: 'y_feed',
-                data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
-                fill: true,
-                borderWidth: 2,
-                backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
-                borderColor: [ 'rgba(127, 255, 0, 1)' ],
-            }";
-        $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; } ";
-        $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
-        $datasetIndex++;
-
-        $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
-        $wh_feed_dataset = ",{
-                label: 'Einspeisung (Summe)',
-                yAxisID: 'y_wh_feed',
-                data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
-                fill: true,
-                borderWidth: 2,
-                backgroundColor: [ 'rgba(127, 255, 0, 0.15)' ],
-                borderColor: [ 'rgba(127, 255, 0, 0.3)' ],
-            }";
-        $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' Wh'; } ";
-        $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },";
-        $datasetIndex++;
-    }
-    if ($display_temp && $temp_measured) {
-        $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
-        $min = ceil(min($dataPoints_t_wo_null)) - 1;
-        $max = floor(max($dataPoints_t_wo_null)) + 1;
-        $t_dataset = ",{
-                label: '$temp_label',
-                yAxisID: 'y_t',
-                data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
-                fill: false,
-                borderWidth: 2,
-                borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
-            }";
-        $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $temp_unit'; }";
-        $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $temp_unit'; } } },";
-        $datasetIndex++;
-    }
-    echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
-    <script>
-    var ctx = document.getElementById('myChart');
-    var myChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            datasets: [{
-                label: '".($feed_measured ? 'Bezug' : 'Leistung')."',
-                yAxisID: 'y_p',
-                data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
-                fill: true,
-                borderWidth: 2,
-                backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
-                borderColor: [ 'rgba(109, 120, 173, 1)' ],
-            },{
-                label: '".($feed_measured ? 'Bezug (Summe)' : $produce_consume)."',
-                yAxisID: 'y_wh',
-                data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
-                fill: true,
-                borderWidth: 2,
-                backgroundColor: [ 'rgba(109, 120, 173, 0.15)' ],
-                borderColor: [ 'rgba(109, 120, 173, 0.3)' ],
-            }{$feed_dataset}{$wh_feed_dataset}{$t_dataset}]
-        },
-        options: {
-            plugins: {
-                legend: { display: true },
-                tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
+    if ($_GET['3p']) {
+        $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y'))));
+        $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y'))));
+        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
+        <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'L1',
+                    yAxisID: 'y_l1',
+                    data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(128, 64, 0, 0.5)' ],
+                    borderColor: [ 'rgba(128, 64, 0, 1)' ],
+                },{
+                    label: 'L2',
+                    yAxisID: 'y_l2',
+                    data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(0, 0, 0, 0.5)' ],
+                    borderColor: [ 'rgba(0, 0, 0, 1)' ],
+                },{
+                    label: 'L3',
+                    yAxisID: 'y_l3',
+                    data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(128, 128, 128, 0.5)' ],
+                    borderColor: [ 'rgba(128, 128, 128, 1)' ],
+                }]
             },
-            scales: { 
-                y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
-                y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
-                $feed_scale
-                $wh_feed_scale
-                $t_scale
-            },
-            elements: { point: { radius: 0, hitRadius: 10 } },
-            maintainAspectRatio: false,
-            animation: false,
-            normalized: true,
-        }
-    });
-
-    window.addEventListener('swap', function(event) {
-        if (event.detail.direction == 'left') {
-            location.href = document.getElementById('next').href;
-        }
-        if (event.detail.direction == 'right') {
-            location.href = document.getElementById('prev').href;
-        }
-        document.body.style.opacity = '0.3';
-    }, false);
-    </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />';
-    if ($feed_measured) {
-        echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh';
+            options: {
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' W'; } } }
+                },
+                scales: { 
+                    y_l1: { $axisY_min $axisY_max position: 'right', ticks: { callback: function(value, index, values) { return value + ' W'; } } },
+                    y_l2: { $axisY_min $axisY_max display: false },
+                    y_l3: { $axisY_min $axisY_max display: false },
+                },
+                elements: { point: { radius: 0, hitRadius: 10 } },
+                maintainAspectRatio: false,
+                animation: false,
+                normalized: true,
+            }
+        });";
     } else {
-        echo $produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'];
+        $datasetIndex = 2;
+        if ($feed_measured) {
+            $feed_dataset = ",{
+                    label: 'Einspeisung',
+                    yAxisID: 'y_feed',
+                    data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
+                    borderColor: [ 'rgba(127, 255, 0, 1)' ],
+                }";
+            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; } ";
+            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
+            $datasetIndex++;
+
+            $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
+            $wh_feed_dataset = ",{
+                    label: 'Einspeisung (Summe)',
+                    yAxisID: 'y_wh_feed',
+                    data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(127, 255, 0, 0.15)' ],
+                    borderColor: [ 'rgba(127, 255, 0, 0.3)' ],
+                }";
+            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' Wh'; } ";
+            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },";
+            $datasetIndex++;
+        }
+        if ($display_temp && $temp_measured) {
+            $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
+            $min = ceil(min($dataPoints_t_wo_null)) - 1;
+            $max = floor(max($dataPoints_t_wo_null)) + 1;
+            $t_dataset = ",{
+                    label: '$temp_label',
+                    yAxisID: 'y_t',
+                    data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
+                    fill: false,
+                    borderWidth: 2,
+                    borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
+                }";
+            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $temp_unit'; }";
+            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $temp_unit'; } } },";
+            $datasetIndex++;
+        }
+        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
+        <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: '".($feed_measured ? 'Bezug' : 'Leistung')."',
+                    yAxisID: 'y_p',
+                    data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
+                    borderColor: [ 'rgba(109, 120, 173, 1)' ],
+                },{
+                    label: '".($feed_measured ? 'Bezug (Summe)' : $produce_consume)."',
+                    yAxisID: 'y_wh',
+                    data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba(109, 120, 173, 0.15)' ],
+                    borderColor: [ 'rgba(109, 120, 173, 0.3)' ],
+                }{$feed_dataset}{$wh_feed_dataset}{$t_dataset}]
+            },
+            options: {
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
+                },
+                scales: { 
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
+                    y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
+                    $feed_scale
+                    $wh_feed_scale
+                    $t_scale
+                },
+                elements: { point: { radius: 0, hitRadius: 10 } },
+                maintainAspectRatio: false,
+                animation: false,
+                normalized: true,
+            }
+        });";
     }
-    echo ' | Messwerte zusammenfassen: <select id="res" name="res" onchange="this.form.submit();">';
+    echo "
+        window.addEventListener('swap', function(event) {
+            if (event.detail.direction == 'left') {
+                location.href = document.getElementById('next').href;
+            }
+            if (event.detail.direction == 'right') {
+                location.href = document.getElementById('prev').href;
+            }
+            document.body.style.opacity = '0.3';
+        }, false);
+        </script>";
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />';
+    if (!$_GET['3p']) {
+        if ($feed_measured) {
+            echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh | ';
+        } else {
+            echo $produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | ';
+        }
+    }
+    echo 'Messwerte zusammenfassen: <select id="res" name="res" onchange="this.form.submit();">';
     foreach (array('-1', '1', '2', '3', '4', '5', '6', '10', '15', '20', '30', '60') as $value) {
         $selected = $value == $res ? ' selected="selected"' : '';
         if ($value == -1) {
@@ -413,7 +500,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo "<option value=\"$value\"$selected>$text</option>";
     }
     echo '</select>';
-    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
+    if (!$_GET['3p']) {
+        echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
+    }
     echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
         $selected = $i == $t1 ? ' selected="selected"' : '';
@@ -427,15 +516,21 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
+    if ($device == 'shelly3em') {
+        $checked = $_GET['3p'] ? ' checked="checked"' : '';
+        echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Phasen anzeigen</label></form>';
+    }
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label></form>';
     } else {
         echo '</form>';
     }
-    echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
+    if (!$_GET['3p']) {
+        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
+    }
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
-    if ($power_details_resolution) {
+    if ($power_details_resolution && !$_GET['3p']) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? 'Bezug' : $produce_consume).':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
