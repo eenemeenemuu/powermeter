@@ -518,17 +518,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     echo '</select>';
     if ($device == 'shelly3em') {
         $checked = $_GET['3p'] ? ' checked="checked"' : '';
-        echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Phasen anzeigen</label></form>';
+        echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Phasen anzeigen</label>';
     }
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
-        echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label></form>';
-    } else {
-        echo '</form>';
+        echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
     }
     if (!$_GET['3p']) {
         echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
     }
+    echo '</form>';
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution && !$_GET['3p']) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
