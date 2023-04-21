@@ -524,10 +524,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
     }
+    echo '</form>';
     if (!$_GET['3p']) {
         echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
     }
-    echo '</form>';
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
     if ($power_details_resolution && !$_GET['3p']) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
