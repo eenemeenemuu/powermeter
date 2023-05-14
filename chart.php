@@ -548,6 +548,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $month = htmlentities(trim($_GET['m']));
     list($chart_stats) = pm_scan_chart_stats();
 
+    for ($i = 1; $i <= 31; $i++) {
+        if ($i > 28 && substr($month, -2) == '02') {
+            continue;
+        } elseif ($i == 31 && in_array(substr($month, -2), array('04', '06', '09', '11'))) {
+            continue;
+        } else {
+            $chart_stats_this_month[$month.'-'.($i < 10 ? '0'.$i : $i)] = null;
+        }
+    }
+
     foreach ($chart_stats as $day => $data) {
         $this_month = substr($day, 0, 7);
         $chart_stats_months[] = $this_month;
@@ -669,6 +679,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     $year = htmlentities(trim($_GET['y']));
     list($chart_stats) = pm_scan_chart_stats();
+
+    for ($i = 1; $i <= 12; $i++) {
+        $chart_stats_this_year[$year.'-'.($i < 10 ? '0'.$i : $i)] = null;
+    }
 
     foreach ($chart_stats as $day => $data) {
         $this_year = substr($day, 0, 4);
