@@ -306,13 +306,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     } elseif ($feed_measured) {
         $axisY_max = get_y_min_max('max', $dataPoints_y_max);
     }
-    echo '<title>'.$date.' (';
+    echo '<title>'.$date;
     if ($feed_measured) {
-        echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh';
-    } else {
-        echo $produce_consume.': '.$wh.' Wh';
+        echo ' (Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh)';
+    } elseif (!$_GET['3p']) {
+        echo ' ('.$produce_consume.': '.$wh.' Wh)';
     }
-    echo ')</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
+    echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
