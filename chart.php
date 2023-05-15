@@ -665,9 +665,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$produce_consume.' (gesamt): '.$kwh.' kWh';
     if (count($chart_stats_this_month) > 1) {
-        asort($chart_stats_this_month);
-        echo ' | '.$produce_consume.' (max): '.array_pop($chart_stats_this_month).' Wh';
-        echo ' | '.$produce_consume.' (min): '.array_shift($chart_stats_this_month).' Wh';
+        echo ' | '.$produce_consume.' (max): '.max($chart_stats_this_month).' Wh';
+        echo ' | '.$produce_consume.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' Wh';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> Wh (0 = dynamisch)';
 } elseif ($_GET['y']) {
@@ -795,9 +794,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$_GET['y'].'" />'.$produce_consume.' (gesamt): '.$kwh.' kWh';
     if (count($chart_stats_this_year) > 1) {
-        asort($chart_stats_this_year);
-        echo ' | '.$produce_consume.' (max): '.array_pop($chart_stats_this_year).' kWh';
-        echo ' | '.$produce_consume.' (min): '.array_shift($chart_stats_this_year).' kWh';
+        echo ' | '.$produce_consume.' (max): '.max($chart_stats_this_year).' Wh';
+        echo ' | '.$produce_consume.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' Wh';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> kWh (0 = dynamisch)';
 } else {

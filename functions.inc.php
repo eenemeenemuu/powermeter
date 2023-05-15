@@ -208,6 +208,9 @@ function date_dot2dash($date) {
 
 function pm_round($value, $number_format = false, $max_precision_level = 9) {
     global $rounding_precision, $power_threshold;
+    if ($value === null) {
+        return null;
+    }
     if ($value < $power_threshold) {
         return 0;
     }
