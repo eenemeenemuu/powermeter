@@ -171,13 +171,13 @@ function GetStats() {
 
         return $stats_array;
     } elseif ($device == 'ahoydtu') {
-        $data = json_decode(file_get_contents('http://'.$host.'/api/live'));
-        if ($data->inverter[0]->ts_last_success) {
-            $time = $data->inverter[0]->ts_last_success;
+        $data = json_decode(file_get_contents('http://'.$host.'/api/inverter/id/0'));
+        if ($data->ts_last_success) {
+            $time = $data->ts_last_success;
             $stats_array['date'] = date("d.m.Y", $time);
             $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($data->inverter[0]->ch[0][2], true, 1);
-            $stats_array['temp'] = pm_round($data->inverter[0]->ch[0][5], true, 1);
+            $stats_array['power'] = pm_round($data->ch[0][2], true, 1);
+            $stats_array['temp'] = pm_round($data->ch[0][5], true, 1);
 
             return $stats_array;
         } else {
