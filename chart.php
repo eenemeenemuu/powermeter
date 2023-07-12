@@ -598,7 +598,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y;
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
     echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
     echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
@@ -726,7 +726,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y;
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
     echo '<title>'.$year.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
     echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a></div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
