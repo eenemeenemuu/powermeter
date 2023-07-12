@@ -542,8 +542,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $produce_consume = 'Einspeisung';
+        $feed_measured = true;
     } else {
         $index = 1;
+        $feed_measured = false;
     }
     $month = htmlentities(trim($_GET['m']));
     list($chart_stats) = pm_scan_chart_stats();
@@ -563,6 +565,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $chart_stats_months[] = $this_month;
         if ($this_month == $month) {
             $chart_stats_this_month[$day] = $data[$index];
+            if (!$feed_measured && array_key_exists(6, $data)) {
+                $feed_measured = true;
+            }
         }
     }
     $chart_stats_months = array_unique($chart_stats_months);
@@ -600,7 +605,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
     echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? 'Verbrauch' : 'Einspeisung').'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -673,8 +678,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $produce_consume = 'Einspeisung';
+        $feed_measured = true;
     } else {
         $index = 1;
+        $feed_measured = false;
     }
     $year = htmlentities(trim($_GET['y']));
     list($chart_stats) = pm_scan_chart_stats();
@@ -688,6 +695,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $chart_stats_years[] = $this_year;
         if ($this_year == $year) {
             $chart_stats_this_year[substr($day, 0, 7)] += $data[$index]/1000;
+            if (!$feed_measured && array_key_exists(6, $data)) {
+                $feed_measured = true;
+            }
         }
     }
     $chart_stats_years = array_unique($chart_stats_years);
@@ -728,7 +738,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
     echo '<title>'.$year.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a></div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? 'Verbrauch' : 'Einspeisung').'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
         echo '<a id="prev" href="?y='.$chart_stats_years[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
