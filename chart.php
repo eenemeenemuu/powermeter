@@ -308,9 +308,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo '<title>'.$date;
     if ($feed_measured) {
-        echo ' (Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh)';
+        echo ' ('.$unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h)';
     } elseif (!$_GET['3p']) {
-        echo ' ('.$produce_consume.': '.$wh.' Wh)';
+        echo ' ('.$unit1_label.': '.$wh.' '.$unit1.'h)';
     }
     echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
@@ -366,10 +366,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' W'; } } }
+                    tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit1'; } } }
                 },
                 scales: { 
-                    y_l1: { $axisY_min $axisY_max position: 'right', ticks: { callback: function(value, index, values) { return value + ' W'; } } },
+                    y_l1: { $axisY_min $axisY_max position: 'right', ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },
                     y_l2: { $axisY_min $axisY_max display: false },
                     y_l3: { $axisY_min $axisY_max display: false },
                 },
@@ -383,7 +383,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $datasetIndex = 2;
         if ($feed_measured) {
             $feed_dataset = ",{
-                    label: 'Einspeisung',
+                    label: '$unit1_label_out',
                     yAxisID: 'y_feed',
                     data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -391,13 +391,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
                     borderColor: [ 'rgba(127, 255, 0, 1)' ],
                 }";
-            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' W'; } ";
-            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },";
+            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1'; } ";
+            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },";
             $datasetIndex++;
 
             $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
             $wh_feed_dataset = ",{
-                    label: 'Einspeisung (Summe)',
+                    label: '$unit1_label_out (Summe)',
                     yAxisID: 'y_wh_feed',
                     data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -405,8 +405,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(127, 255, 0, 0.15)' ],
                     borderColor: [ 'rgba(127, 255, 0, 0.3)' ],
                 }";
-            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' Wh'; } ";
-            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },";
+            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1}h'; } ";
+            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },";
             $datasetIndex++;
         }
         if ($display_temp && $temp_measured) {
@@ -414,15 +414,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $min = ceil(min($dataPoints_t_wo_null)) - 1;
             $max = floor(max($dataPoints_t_wo_null)) + 1;
             $t_dataset = ",{
-                    label: '$temp_label',
+                    label: '$unit2_label',
                     yAxisID: 'y_t',
                     data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                     fill: false,
                     borderWidth: 2,
                     borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
                 }";
-            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $temp_unit'; }";
-            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $temp_unit'; } } },";
+            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2'; }";
+            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2'; } } },";
             $datasetIndex++;
         }
         echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
@@ -432,7 +432,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             type: 'line',
             data: {
                 datasets: [{
-                    label: '".($feed_measured ? 'Bezug' : 'Leistung')."',
+                    label: '".($feed_measured ? $unit1_label_in : 'Leistung')."',
                     yAxisID: 'y_p',
                     data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -440,7 +440,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                     borderColor: [ 'rgba(109, 120, 173, 1)' ],
                 },{
-                    label: '".($feed_measured ? 'Bezug (Summe)' : $produce_consume)."',
+                    label: '".($feed_measured ? $unit1_label_in. ' (Summe)' : $unit1_label)."',
                     yAxisID: 'y_wh',
                     data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -452,10 +452,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' W'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' Wh'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
+                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit1'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit1}h'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
                 },
                 scales: { 
-                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' W'; } } },
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },
                     y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
                     $feed_scale
                     $wh_feed_scale
@@ -482,9 +482,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />';
     if (!$_GET['3p']) {
         if ($feed_measured) {
-            echo 'Bezug: '.$wh.' Wh | Einspeisung: '.$wh_feed.' Wh | ';
+            echo $unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h | ';
         } else {
-            echo $produce_consume.': '.$wh.' Wh von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' W um '.$power_stats['peak']['t'].' | ';
+            echo $unit1_label.': '.$wh.' '.$unit1.'h von '.$power_stats['first'].' bis '.$power_stats['last'].' | Peak: '.$power_stats['peak']['p'].' '.$unit1.' um '.$power_stats['peak']['t'].' | ';
         }
     }
     echo 'Messwerte zusammenfassen: <select id="res" name="res" onchange="this.form.submit();">';
@@ -501,7 +501,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
     echo '</select>';
     if (!$_GET['3p']) {
-        echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> W (0 = dynamisch)';
+        echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> '.$unit1.' (0 = dynamisch)';
     }
     echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
@@ -532,19 +532,20 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($power_details_resolution && !$_GET['3p']) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
-        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? 'Bezug' : $produce_consume).':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div><div class="cell head">Leistung:</div><div class="cell">'.$produce_consume.':</div></div>';
+        echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? $unit1_label_in : $unit1_label).':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div></div>';
         foreach ($power_details as $key => $value) {
-            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' W</div><div class="cell">'.$value.'</div><div class="cell">'.pm_round($power_details_wh[$key], true).' Wh</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' W</div><div class="cell">'.pm_round($power_details_wh2[$key], true).' Wh</div><div class="cell head">&lt; '.($key+$power_details_resolution).' W</div><div class="cell">'.pm_round($power_details_wh3[$key], true).' Wh</div></div>';
+            echo '<div style="float: left; padding-bottom: 2px;"><div class="cell head">'.($key ? '&ge;' : '&gt;').' '.$key.' '.$unit1.'</div><div class="cell">'.$value.'</div><div class="cell">'.pm_round($power_details_wh[$key], true).' '.$unit1.'h</div><div class="cell head">'.($key ? $key : $key+1).' - '.($key+$power_details_resolution-1).' '.$unit1.'</div><div class="cell">'.pm_round($power_details_wh2[$key], true).' '.$unit1.'h</div><div class="cell head">&lt; '.($key+$power_details_resolution).' '.$unit1.'</div><div class="cell">'.pm_round($power_details_wh3[$key], true).' '.$unit1.'h</div></div>';
         }
     }
     echo '</body></html>';
 } elseif ($_GET['m']) {
     if (isset($_GET['feed'])) {
         $index = 6;
-        $produce_consume = 'Einspeisung';
+        $unit1_label = $unit1_label_out;
         $feed_measured = true;
     } else {
         $index = 1;
+        $unit1_label = $unit1_label_in;
         $feed_measured = false;
     }
     $month = htmlentities(trim($_GET['m']));
@@ -604,8 +605,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $axisY_max = " max: $fix_axis_y,";
     }
     $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
-    echo '<title>'.$month.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? 'Verbrauch' : 'Einspeisung').'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<title>'.$month.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -626,7 +627,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         type: 'bar',
         data: {
             datasets: [{
-                label: '$produce_consume',
+                label: '$unit1_label',
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -638,10 +639,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         options: {
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' Wh'; } } }
+                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' {$unit1}h'; } } }
             },
             scales: { 
-                y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' Wh'; } } },
+                y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
             maintainAspectRatio: false,
@@ -668,19 +669,20 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$produce_consume.' (gesamt): '.$kwh.' kWh';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_month) > 1) {
-        echo ' | '.$produce_consume.' (max): '.max($chart_stats_this_month).' Wh';
-        echo ' | '.$produce_consume.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' Wh';
+        echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_month).' '.$unit1.'h';
+        echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' '.$unit1.'h';
     }
-    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> Wh (0 = dynamisch)';
+    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> '.$unit1.'h (0 = dynamisch)';
 } elseif ($_GET['y']) {
     if (isset($_GET['feed'])) {
         $index = 6;
-        $produce_consume = 'Einspeisung';
+        $unit1_label = $unit1_label_out;
         $feed_measured = true;
     } else {
         $index = 1;
+        $unit1_label = $unit1_label_in;
         $feed_measured = false;
     }
     $year = htmlentities(trim($_GET['y']));
@@ -737,8 +739,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $axisY_max = " max: $fix_axis_y,";
     }
     $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
-    echo '<title>'.$year.' ('.$produce_consume.': '.$kwh.' kWh)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? 'Verbrauch' : 'Einspeisung').'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<title>'.$year.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
         echo '<a id="prev" href="?y='.$chart_stats_years[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -760,7 +762,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         type: 'bar',
         data: {
             datasets: [{
-                label: '$produce_consume',
+                label: '$unit1_label',
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_year, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -772,10 +774,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         options: {
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' kWh'; } } }
+                tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' k{$unit1}h'; } } }
             },
             scales: { 
-                y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' kWh'; } } },
+                y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' k{$unit1}h'; } } },
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
             maintainAspectRatio: false,
@@ -802,12 +804,12 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$_GET['y'].'" />'.$produce_consume.' (gesamt): '.$kwh.' kWh';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$_GET['y'].'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_year) > 1) {
-        echo ' | '.$produce_consume.' (max): '.max($chart_stats_this_year).' Wh';
-        echo ' | '.$produce_consume.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' Wh';
+        echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' '.$unit1.'h';
+        echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' '.$unit1.'h';
     }
-    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> kWh (0 = dynamisch)';
+    echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> k'.$unit1.'h (0 = dynamisch)';
 } else {
     header("Location: overview.php");
 }

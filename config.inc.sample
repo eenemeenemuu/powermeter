@@ -2,8 +2,15 @@
 // basic configuration - mandatory
 $device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly, envtec, ahoydtu, esp-epever-controller
 $host = 'tasmotaplug4'; // host name or ip address of measuring device (not needed for envtec)
-$produce_consume = 'Verbrauch'; // Verbrauch / Produktion / Ertrag / etc.
 $refresh_rate = 2; // refresh rate of index.php in seconds
+
+// custom units and labels
+$unit1 = ''; // defaults to "W" if not set; unit of first value; usually this is power, but may be also current or something else
+$unit1_label = ''; // defaults to "Leistung" if not set; usually something like "Verbrauch", "Produktion", "Ertrag", etc.; for backwards compatibility $produce_consume will be used, if set
+$unit1_label_in = ''; // defaults to "Bezug" if not set; if negative values are detected, this label is used for positive values (instead of $unit1_label)
+$unit1_label_out = ''; // defaults to "Einspeisung" if not set; if negative values are detected, this label is used for negative values
+$unit2 = ''; // defaults to "°C" if not set; unit of second value; usually this is temperature, but may be also voltage, state of charge or something else
+$unit2_label = ''; // defaults to "Temperatur" if not set
 
 // optional configuration
 $rounding_precision = 0; // set the number of decimal digits to round to for displaying/logging various values like °C, W and Wh (if possible)

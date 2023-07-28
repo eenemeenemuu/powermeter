@@ -1,7 +1,23 @@
 <?php
 
-$temp_unit = $device == 'esp-epever-controller' ? 'V' : '°C';
-$temp_label = $device == 'esp-epever-controller' ? 'Spannung' : 'Temperatur';
+if (!$unit1) {
+    $unit1 = 'W';
+}
+if (!$unit1_label) {
+    $unit1_label = $produce_consume ? $produce_consume : 'Leistung';
+}
+if (!$unit1_label_in) {
+    $unit1_label_in = 'Bezug';
+}
+if (!$unit1_label_out) {
+    $unit1_label_out = 'Einspeisung';
+}
+if (!$unit2) {
+    $unit2 = '°C';
+}
+if (!$unit2_label) {
+    $unit2_label = 'Temperatur';
+}
 
 function GetSessionId ($user, $pass) {
     global $host;
@@ -260,8 +276,9 @@ function pm_scan_chart_stats() {
 }
 
 function pm_print_monthly_overview($header, $data, $feed = false) {
+    global $unit1;
     $feed = $feed ? '&feed' : '';
-    echo '<table border="1"><tr><td colspan="14" align="center">'.$header.' pro Monat in kWh</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
+    echo '<table border="1"><tr><td colspan="14" align="center">'.$header.' pro Monat in k'.$unit1.'h</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
     foreach ($data as $year => $months) {
         echo '<tr><td><strong>'.$year.'</strong></td>';
         $month_array = array('01' => '', '02' => '', '03' => '', '04' => '', '05' => '', '06' => '', '07' => '', '08' => '', '09' => '', '10' => '', '11' => '', '12' => '');

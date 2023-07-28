@@ -53,19 +53,19 @@ if ($power_details_resolution) {
 }
 
 echo '<link rel="stylesheet" href="css/tablesort.css"><script src="js/tablesort.min.js"></script><script src="js/tablesort.number.min.js"></script>';
-echo '<title>'.$produce_consume.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body>🔌 <a href=".">Zur aktuellen Leistungsanzeige</a><br /><br />';
+echo '<title>'.$unit1_label.'sübersicht</title><style>table, th, td { border: 1px solid black; border-collapse: collapse; padding: 3px; } td.v { text-align: right; } th { position: sticky; top: 0; background-color: white; background-clip: padding-box; box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.5); } </style></head><body>🔌 <a href=".">Zur aktuellen Leistungsanzeige</a><br /><br />';
 
-pm_print_monthly_overview($feed_measured ? 'Bezug' : $produce_consume, $chart_stats_month);
+pm_print_monthly_overview($feed_measured ? $unit1_label_in : $unit1_label, $chart_stats_month);
 if ($feed_measured) {
-    pm_print_monthly_overview('Einspeisung', $chart_stats_month_feed, true);
+    pm_print_monthly_overview($unit1_label_out, $chart_stats_month_feed, true);
 }
 
-echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.($feed_measured ? 'Bezug' : $produce_consume).'<br />(Wh)</th><th>von</th><th>bis</th><th>Peak<br />(W)</th><th>um</th>';
+echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default>Datum</th><th>'.($feed_measured ? $unit1_label_in : $unit1_label).'<br />('.$unit1.'h)</th><th>von</th><th>bis</th><th>Peak<br />('.$unit1.')</th><th>um</th>';
 if ($feed_measured) {
-    echo '<th>Einspeisung<br />(Wh)</th>';
+    echo '<th>'.$unit1_label_out.'<br />('.$unit1.'h)</th>';
 }
 for ($i = 0; $i < $power_details_max_count; $i++) {
-    echo '<th>&lt;&nbsp;'.($i+1) * $power_details_resolution.'&nbsp;W<br />(Wh)</th>';
+    echo '<th>&lt;&nbsp;'.($i+1) * $power_details_resolution.'&nbsp;'.$unit1.'<br />('.$unit1.'h)</th>';
 }
 echo '</tr></thead><tbody>';
 
