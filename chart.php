@@ -198,7 +198,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 $t_res = array();
                 $p_res_feed = array();
                 $y = 0;
-                $y_feed = null;
+                $y_feed = 0;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
                         if ($_GET['3p']) {
