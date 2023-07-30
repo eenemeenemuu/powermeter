@@ -545,7 +545,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $feed_measured = true;
     } else {
         $index = 1;
-        $unit1_label = $unit1_label_in;
+        $unit1_label = $unit1_label;
         $feed_measured = false;
     }
     $month = htmlentities(trim($_GET['m']));
@@ -568,6 +568,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $chart_stats_this_month[$day] = $data[$index];
             if (!$feed_measured && array_key_exists(6, $data)) {
                 $feed_measured = true;
+                $unit1_label = $unit1_label_in;
             }
         }
     }
@@ -682,7 +683,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $feed_measured = true;
     } else {
         $index = 1;
-        $unit1_label = $unit1_label_in;
+        $unit1_label = $unit1_label;
         $feed_measured = false;
     }
     $year = htmlentities(trim($_GET['y']));
@@ -699,6 +700,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $chart_stats_this_year[substr($day, 0, 7)] += $data[$index]/1000;
             if (!$feed_measured && array_key_exists(6, $data)) {
                 $feed_measured = true;
+                $unit1_label = $unit1_label_in;
             }
         }
     }
