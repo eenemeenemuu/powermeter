@@ -126,7 +126,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $dataPoints_wh_feed = array();
     $dataPoints_feed = array();
     $dataPoints_y_max = 0;
-    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0));
+    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0);
     $power_details = array();
     $power_details_wh = array();
     $temp_measured = false;
