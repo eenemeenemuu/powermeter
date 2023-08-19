@@ -18,6 +18,10 @@ if (!$unit2) {
 if (!$unit2_label) {
     $unit2_label = 'Temperatur';
 }
+if (!isset($unit2_display)) {
+    // backward compatibility
+    $unit2_display = $display_temp;
+}
 
 function GetSessionId ($user, $pass) {
     global $host;

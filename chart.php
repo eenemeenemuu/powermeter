@@ -129,7 +129,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0);
     $power_details = array();
     $power_details_wh = array();
-    $temp_measured = false;
+    $unit2_measured = false;
     $feed_measured = false;
     $data = array();
     sort($lines);
@@ -139,7 +139,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $time_parts = explode(":", $data_this[1]);
             if ($_GET['3p']) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6]);
-            } elseif ($display_temp && isset($data_this[3])) {
+            } elseif ($unit2_display && isset($data_this[3])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
             } else {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
@@ -176,7 +176,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     $dataPoints_wh[] = pm_round($power_stats['wh']);
                     $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
                     if (isset($value['t'])) {
-                        $temp_measured = true;
+                        $unit2_measured = true;
                         $dataPoints_t[] = pm_round($value['t']);
                     }
                 }
@@ -245,7 +245,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     $dataPoints_wh_feed[] = pm_round($power_stats['wh_feed']);
 
                     if (count($t_res)) {
-                        $temp_measured = true;
+                        $unit2_measured = true;
                         $dataPoints_t[] = pm_round(array_sum($t_res) / count($t_res));
                     } else {
                         $dataPoints_t[] = null;
@@ -409,10 +409,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },";
             $datasetIndex++;
         }
-        if ($display_temp && $temp_measured) {
+        if ($unit2_display && $unit2_measured) {
             $dataPoints_t_wo_null = array_diff($dataPoints_t, array(null));
-            $min = ceil(min($dataPoints_t_wo_null)) - 1;
-            $max = floor(max($dataPoints_t_wo_null)) + 1;
+            $min = isset($unit2_min) && $unit2_min !== false ? $unit2_min : ceil(min($dataPoints_t_wo_null)) - 1;
+            $max = isset($unit2_max) && $unit2_max !== false ? $unit2_max : floor(max($dataPoints_t_wo_null)) + 1;
             $t_dataset = ",{
                     label: '$unit2_label',
                     yAxisID: 'y_t',

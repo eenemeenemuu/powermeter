@@ -33,7 +33,9 @@ $log_extra_array = 0; // store array of last x measurements in separate file (e.
 // chart configuration
 $fix_axis_y = 0; // fix chart to specific value, set to 0 to calculate automatically
 $res = 5; // default resolution of data in minutes; possible options: 1, 2, 3, 4, 5, 6, 10, 15, 20, 30, 60; set to -1 to display all data
-$display_temp = false; // display temperature, if available
+$unit2_display = false; // display temperature (or whatever custom unit/label is configured), if available
+$unit2_min = false; // fix lower value of "temperature" to specific value, set to "false" to calculate automatically
+$unit2_max = false; // fix upper value of "temperature" to specific value, set to "false" to calculate automatically
 $power_details_resolution = 50; // display the duration the device produces/consumes at least a specific amount of power (and its total); set to 0 to disable; example: set the value to 50 and it will display data for <= 50 W, <= 100 W, <= 150 W etc. / set the value to 100 and it will display data for <= 100 W, <= 200 W, etc.
 
 // additional logging configuration
