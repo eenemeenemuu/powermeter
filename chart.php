@@ -386,10 +386,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 }";
         }
         if ($unit3 === $unit4 && $unit4 === $unit5) {
-            $tooltip = "tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit3'; } } }";
+            $tooltip_unit = "{ return context.parsed.y + ' $unit3'; }";
             $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3'; } },";
         } else {
-            $tooltip = "tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } } } }";
+            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } }";
             $ticks = "";
         }
 
@@ -404,12 +404,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             options: {
                 plugins: {
                     legend: { display: true },
-                    $tooltip
+                    tooltip: { position: 'nearest', callbacks: { label: function(context) $tooltip_unit } }
                 },
                 scales: { 
                     y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },
                     y_l2: {{$axisY_min}{$axisY_max} display: false },
                     y_l3: {{$axisY_min}{$axisY_max} display: false },
+                },
+                interaction: {
+                    mode: 'index',
                 },
                 elements: { point: { radius: 0, hitRadius: 10 } },
                 maintainAspectRatio: false,
