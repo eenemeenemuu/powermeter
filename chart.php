@@ -554,7 +554,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
-    if ($extra_data) {
+    if ($extra_data || $_GET['3p']) {
         $checked = $_GET['3p'] ? ' checked="checked"' : '';
         echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Extradaten anzeigen</label>';
     }
