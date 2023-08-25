@@ -331,6 +331,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($_GET['3p']) {
         $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y'))));
         $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y'))));
+        if ($unit3 === $unit4 && $unit4 === $unit5) {
+            $tooltip = "tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit3'; } } }";
+            $ticks = ", ticks: { callback: function(value, index, values) { return value + ' $unit3'; } } ";
+        } else {
+            $tooltip = "tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } } } }";
+            $ticks = "";
+        }
         echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
         <script>
         var ctx = document.getElementById('myChart');
@@ -338,7 +345,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             type: 'line',
             data: {
                 datasets: [{
-                    label: 'L1',
+                    label: '$unit3_label',
                     yAxisID: 'y_l1',
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -346,7 +353,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(128, 64, 0, 0.5)' ],
                     borderColor: [ 'rgba(128, 64, 0, 1)' ],
                 },{
-                    label: 'L2',
+                    label: '$unit4_label',
                     yAxisID: 'y_l2',
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -354,7 +361,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(0, 0, 0, 0.5)' ],
                     borderColor: [ 'rgba(0, 0, 0, 1)' ],
                 },{
-                    label: 'L3',
+                    label: '$unit5_label',
                     yAxisID: 'y_l3',
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -366,10 +373,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit1'; } } }
+                    $tooltip
                 },
                 scales: { 
-                    y_l1: { $axisY_min $axisY_max position: 'right', ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },
+                    y_l1: { $axisY_min $axisY_max position: 'right' $ticks},
                     y_l2: { $axisY_min $axisY_max display: false },
                     y_l3: { $axisY_min $axisY_max display: false },
                 },

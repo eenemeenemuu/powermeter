@@ -22,6 +22,24 @@ if (!isset($unit2_display)) {
     // backward compatibility
     $unit2_display = $display_temp;
 }
+if (!$unit3) {
+    $unit3 = 'W';
+}
+if (!$unit3_label) {
+    $unit3_label = 'L1';
+}
+if (!$unit4) {
+    $unit4 = 'W';
+}
+if (!$unit4_label) {
+    $unit4_label = 'L2';
+}
+if (!$unit5) {
+    $unit5 = 'W';
+}
+if (!$unit5_label) {
+    $unit5_label = 'L3';
+}
 
 function GetSessionId ($user, $pass) {
     global $host;

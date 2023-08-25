@@ -11,6 +11,12 @@ $unit1_label_in = ''; // defaults to "Bezug" if not set; if negative values are 
 $unit1_label_out = ''; // defaults to "Einspeisung" if not set; if negative values are detected, this label is used for negative values
 $unit2 = ''; // defaults to "°C" if not set; unit of second value; usually this is temperature, but may be also voltage, state of charge or something else
 $unit2_label = ''; // defaults to "Temperatur" if not set
+$unit3 = ''; // defaults to "W" if not set; unit of third value
+$unit3_label = ''; // defaults to "L1" if not set
+$unit4 = ''; // defaults to "W" if not set; unit of third value
+$unit4_label = ''; // defaults to "L1" if not set
+$unit5 = ''; // defaults to "W" if not set; unit of third value
+$unit5_label = ''; // defaults to "L1" if not set
 
 // optional configuration
 $rounding_precision = 0; // set the number of decimal digits to round to for displaying/logging various values like °C, W and Wh (if possible)
