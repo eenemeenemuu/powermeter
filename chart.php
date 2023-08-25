@@ -331,20 +331,24 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     if ($_GET['3p']) {
         $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y'))));
         $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y'))));
-        if ($unit3 === $unit4 && $unit4 === $unit5) {
-            $tooltip = "tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit3'; } } }";
-            $ticks = ", ticks: { callback: function(value, index, values) { return value + ' $unit3'; } } ";
-        } else {
-            $tooltip = "tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } } } }";
-            $ticks = "";
+        $dataPoints_l3_empty = true;
+        foreach ($dataPoints_l3 as $value) {
+            if ($value['y']) {
+                $dataPoints_l3_empty = false;
+                break;
+            }
         }
-        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
-        <script>
-        var ctx = document.getElementById('myChart');
-        var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [{
+        if ($dataPoints_l3_empty) {
+            $unit5 = $unit4;
+            $dataPoints_l2_empty = true;
+            foreach ($dataPoints_l2 as $value) {
+                if ($value['y']) {
+                    $dataPoints_l2_empty = false;
+                    break;
+                }
+            }
+        }
+        $datasets = "{
                     label: '$unit3_label',
                     yAxisID: 'y_l1',
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
@@ -352,7 +356,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     borderWidth: 2,
                     backgroundColor: [ 'rgba(128, 64, 0, 0.5)' ],
                     borderColor: [ 'rgba(128, 64, 0, 1)' ],
-                },{
+                }";
+        if (!$dataPoints_l2_empty) {
+            $datasets .= ",{
                     label: '$unit4_label',
                     yAxisID: 'y_l2',
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
@@ -360,7 +366,12 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     borderWidth: 2,
                     backgroundColor: [ 'rgba(0, 0, 0, 0.5)' ],
                     borderColor: [ 'rgba(0, 0, 0, 1)' ],
-                },{
+                }";
+        } else {
+            $unit4 = $unit3;
+        }
+        if (!$dataPoints_l3_empty) {
+            $datasets .= ",{
                     label: '$unit5_label',
                     yAxisID: 'y_l3',
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
@@ -368,7 +379,23 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     borderWidth: 2,
                     backgroundColor: [ 'rgba(128, 128, 128, 0.5)' ],
                     borderColor: [ 'rgba(128, 128, 128, 1)' ],
-                }]
+                }";
+        }
+        if ($unit3 === $unit4 && $unit4 === $unit5) {
+            $tooltip = "tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' $unit3'; } } }";
+            $ticks = ", ticks: { callback: function(value, index, values) { return value + ' $unit3'; } } ";
+        } else {
+            $tooltip = "tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } } } }";
+            $ticks = "";
+        }
+
+        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
+        <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [$datasets]
             },
             options: {
                 plugins: {
