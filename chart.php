@@ -131,6 +131,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $power_details_wh = array();
     $unit2_measured = false;
     $feed_measured = false;
+    $extra_data = false;
     $data = array();
     sort($lines);
     foreach ($lines as $line) {
@@ -143,6 +144,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
             } else {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2]);
+            }
+            if (!$extra_data && isset($data_this[4])) {
+                $extra_data = true;
             }
         }
     }
@@ -550,9 +554,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
-    if ($device == 'shelly3em') {
+    if ($extra_data) {
         $checked = $_GET['3p'] ? ' checked="checked"' : '';
-        echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Phasen anzeigen</label>';
+        echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Extradaten anzeigen</label>';
     }
     if ($pos === 0) {
         $checked = $_GET['refresh'] ? ' checked="checked"' : '';

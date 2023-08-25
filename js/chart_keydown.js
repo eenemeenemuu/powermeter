@@ -52,13 +52,13 @@ document.onkeydown = function(e) {
             document.forms[0].submit();
         }
     }
+    if (kcode == 69) { // E
+        e.preventDefault();
+        document.getElementById("3p").click();
+    }
     if (kcode == 70) { // F
         e.preventDefault();
         document.getElementById("feed").click();
-    }
-    if (kcode == 80) { // P
-        e.preventDefault();
-        document.getElementById("3p").click();
     }
     if (kcode == 82) { // R
         e.preventDefault();
