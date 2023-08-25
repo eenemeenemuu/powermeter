@@ -211,6 +211,9 @@ function GetStats() {
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = pm_round($data->PanelP, true, 2);
             $stats_array['temp'] = pm_round($data->BatteryV, true, 2);
+            $stats_array['emeters'][] = pm_round($data->BatteryI, true, 2);
+            $stats_array['emeters'][] = pm_round($data->PanelV, true, 2);
+            $stats_array['emeters'][] = pm_round($data->PanelI, true, 2);
 
             return $stats_array;
         } else {
