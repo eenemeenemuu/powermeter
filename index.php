@@ -35,7 +35,7 @@ echo '<table width="100%"><tr><td align="center"><table>';
 echo '<tr><td class="r">Aktuelle Leistung:</td><td><span id="power">'.$stats[2].'</span> '.$unit1.'</td></tr>';
 if (isset($stats[4])) {
     for ($i = 4; $i < count($stats); $i++) {
-        echo '<tr><td class="r">L'.($i-3).':</td><td><span id="l'.($i-3).'">'.$stats[$i].'</span> '.$unit1.'</td></tr>';
+        echo '<tr><td class="r">'.${'unit'.($i-1).'_label'}.':</td><td><span id="l'.($i-3).'">'.$stats[$i].'</span> '.${'unit'.($i-1)}.'</td></tr>';
     }
 }
 if (isset($stats[3]) && $stats[3] !== '') {
