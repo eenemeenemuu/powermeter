@@ -353,7 +353,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             }
         }
         $datasets = "{
-                    label: '$unit3_label',
+                    label: '".strip_tags($unit3_label)."',
                     yAxisID: 'y_l1',
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -363,7 +363,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                 }";
         if (!$dataPoints_l2_empty) {
             $datasets .= ",{
-                    label: '$unit4_label',
+                    label: '".strip_tags($unit4_label)."',
                     yAxisID: 'y_l2',
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -376,7 +376,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         }
         if (!$dataPoints_l3_empty) {
             $datasets .= ",{
-                    label: '$unit5_label',
+                    label: '".strip_tags($unit5_label)."',
                     yAxisID: 'y_l3',
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -424,7 +424,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $datasetIndex = 2;
         if ($feed_measured) {
             $feed_dataset = ",{
-                    label: '$unit1_label_out',
+                    label: '".strip_tags($unit1_label_out)."',
                     yAxisID: 'y_feed',
                     data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -438,7 +438,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
 
             $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
             $wh_feed_dataset = ",{
-                    label: '$unit1_label_out (Summe)',
+                    label: '".strip_tags($unit1_label_out)." (Summe)',
                     yAxisID: 'y_wh_feed',
                     data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -455,7 +455,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             $min = isset($unit2_min) && $unit2_min !== false ? $unit2_min : ceil(min($dataPoints_t_wo_null)) - 1;
             $max = isset($unit2_max) && $unit2_max !== false ? $unit2_max : floor(max($dataPoints_t_wo_null)) + 1;
             $t_dataset = ",{
-                    label: '$unit2_label',
+                    label: '".strip_tags($unit2_label)."',
                     yAxisID: 'y_t',
                     data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                     fill: false,
@@ -473,7 +473,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             type: 'line',
             data: {
                 datasets: [{
-                    label: '".($feed_measured ? $unit1_label_in : 'Leistung')."',
+                    label: '".($feed_measured ? strip_tags($unit1_label_in) : 'Leistung')."',
                     yAxisID: 'y_p',
                     data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -481,7 +481,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
                     backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
                     borderColor: [ 'rgba(109, 120, 173, 1)' ],
                 },{
-                    label: '".($feed_measured ? $unit1_label_in. ' (Summe)' : $unit1_label)."',
+                    label: '".($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : $unit1_label)."',
                     yAxisID: 'y_wh',
                     data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -669,7 +669,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         type: 'bar',
         data: {
             datasets: [{
-                label: '$unit1_label',
+                label: '".strip_tags($unit1_label)."',
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -805,7 +805,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         type: 'bar',
         data: {
             datasets: [{
-                label: '$unit1_label',
+                label: '".strip_tags($unit1_label)."',
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_year, JSON_NUMERIC_CHECK).",
                 fill: true,
