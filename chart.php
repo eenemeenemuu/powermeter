@@ -543,6 +543,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     echo '</select>';
     if (!$_GET['3p']) {
         echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> '.$unit1.' (0 = dynamisch)';
+    } else {
+        echo '<input type="hidden" name="fix" value="'.$fix_axis_y.'" />';
     }
     echo ' | Zeitraum eingrenzen: von <select name="t1" onchange="form.submit();">';
     for ($i = 0; $i < 24; $i++) {
