@@ -33,13 +33,13 @@ echo '<style>td { width: 50%; padding: 5px; } td.r { text-align: right; } span {
 echo '</head><body>';
 echo '<table width="100%"><tr><td align="center"><table>';
 echo '<tr><td class="r">Aktuelle Leistung:</td><td><span id="power">'.$stats[2].'</span> '.$unit1.'</td></tr>';
+if (isset($stats[3]) && $stats[3] !== '') {
+    echo '<tr><td class="r">'.$unit2_label.':</td><td><span id="temp">'.$stats[3].'</span> <span id="unit2">'.$unit2.'</span></td></tr>';
+}
 if (isset($stats[4])) {
     for ($i = 4; $i < count($stats); $i++) {
         echo '<tr><td class="r">'.${'unit'.($i-1).'_label'}.':</td><td><span id="l'.($i-3).'">'.$stats[$i].'</span> '.${'unit'.($i-1)}.'</td></tr>';
     }
-}
-if (isset($stats[3]) && $stats[3] !== '') {
-    echo '<tr><td class="r">'.$unit2_label.':</td><td><span id="temp">'.$stats[3].'</span> <span id="unit2">'.$unit2.'</span></td></tr>';
 }
 echo '<tr><td class="r">Uhrzeit:</td><td><span id="time">'.$stats[1].'</span></td></tr>';
 echo '<tr><td class="r">Datum:</td><td><span id="date">'.$stats[0].'</span></td></tr>';
