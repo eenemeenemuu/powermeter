@@ -20,7 +20,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
     function power_stats($value) {
-        global $power_stats, $power_details, $power_details_wh, $power_details_resolution, $device;
+        global $power_stats, $power_details, $power_details_wh, $power_details_resolution, $device, $unit2;
         $value['p'] = floatval($value['p']);
         if (!$power_stats['first'] && $value['p']) {
             $power_stats['first'] = $value;
@@ -32,6 +32,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $value_abs['p'] = abs($value['p']);
         if ($value_abs['p'] && $value_abs['p'] > $power_stats['peak']['p']) {
             $power_stats['peak'] = $value_abs;
+        }
+        if ($unit2 == '%') {
+            $power_stats['percent_min'] = min($power_stats['percent_min'], $value['t']);
+            $power_stats['percent_max'] = max($power_stats['percent_max'], $value['t']);
         }
         if ($power_stats['last_p']) {
             $limit = $device == 'envtec' ? 300 : 100;
@@ -127,6 +131,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     $dataPoints_feed = array();
     $dataPoints_y_max = 0;
     $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0);
+    if ($unit2 == '%') {
+        $power_stats['percent_min'] = PHP_INT_MAX;
+        $power_stats['percent_max'] = PHP_INT_MIN;
+    }
     $power_details = array();
     $power_details_wh = array();
     $unit2_measured = false;
@@ -294,6 +302,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         $stats_str = "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}";
         if ($power_stats['wh_feed']) {
             $stats_str .= ','.$wh_feed;
+        }
+        if ($unit2 == '%') {
+            $stats_str .= ",{$power_stats['percent_min']},{$power_stats['percent_max']}";
         }
         save_stats('chart_stats.csv', $stats_str."\n");
         if ($power_details) {

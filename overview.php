@@ -64,6 +64,10 @@ echo '<table border="1" id="daily" class="sort"><thead><tr><th data-sort-default
 if ($feed_measured) {
     echo '<th>'.$unit1_label_out.'<br />('.$unit1.'h)</th>';
 }
+if ($unit2 == '%') {
+    echo '<th>%<br />(min)</th>';
+    echo '<th>%<br />(max)</th>';
+}
 for ($i = 0; $i < $power_details_max_count; $i++) {
     echo '<th>&lt;&nbsp;'.($i+1) * $power_details_resolution.'&nbsp;'.$unit1.'<br />('.$unit1.'h)</th>';
 }
@@ -75,6 +79,10 @@ foreach ($file_dates_w_stats_data as $date) {
     echo "<tr><td>".(in_array($date, $file_dates) ? "<a href=\"chart.php?file={$date}\">{$date}</a>" : $date)."</td><td class=\"v\">{$chart_stats[$date][1]}</td><td>{$chart_stats[$date][2]}</td><td>{$chart_stats[$date][3]}</td><td class=\"v\">{$chart_stats[$date][4]}</td><td>{$chart_stats[$date][5]}</td>";
     if ($feed_measured) {
         echo '<td class="v">'.(isset($chart_stats[$date][6]) ? $chart_stats[$date][6] : (isset($chart_stats[$date]) ? '0' : '')).'</td>';
+    }
+    if ($unit2 == '%') {
+        echo '<td class="v">'.(isset($chart_stats[$date][7]) ? $chart_stats[$date][7] : '').'</td>';
+        echo '<td class="v">'.(isset($chart_stats[$date][8]) ? $chart_stats[$date][8] : '').'</td>';
     }
     for ($i = 0; $i < $power_details_max_count; $i++) {
         echo '<td class="v">'.($power_details_wh3[$date][$i * $power_details_resolution] ? pm_round($power_details_wh3[$date][$i * $power_details_resolution], true) : '').'</td>';
