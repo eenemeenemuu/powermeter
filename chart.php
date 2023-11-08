@@ -14,8 +14,6 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         header("Location: chart.php?file={$files[1]['date']}");
     }
 
-    echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
-
     if ($pos === false) {
         die('Error! File not found: '.htmlentities($_GET['file']));
     }
@@ -266,6 +264,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
             }
         }
     }
+    if (isset($_GET['percent_max'])) {
+        echo $power_stats['percent_max'];
+        die();
+    }
     $wh = pm_round($power_stats['wh'], true);
     $wh_feed = pm_round($power_stats['wh_feed'], true);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
@@ -321,6 +323,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     } elseif ($feed_measured) {
         $axisY_max = get_y_min_max('max', $dataPoints_y_max);
     }
+    echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
     echo '<title>'.$date;
     if ($feed_measured) {
         echo ' ('.$unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h)';
