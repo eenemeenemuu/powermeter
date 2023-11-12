@@ -27,8 +27,11 @@ $user = ''; // user name
 $pass = ''; // password
 $ain = ''; // "Aktor Identifikationsnummer (AIN)", on your FRITZ!Box go to "Heimnetz > Smart Home" and edit your device to get the AIN
 
-//additional configuration for Envertech Bridge
+// additional configuration for Envertech Bridge
 $station_id = ''; // station ID
+
+// additional configuration for AhoyDTU
+$inverter_id = 0; // if multiple inverters are configured in DTU, set to desired inverter ID
 
 // logging configuration
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)

@@ -40,6 +40,10 @@ if (!$unit5) {
 if (!$unit5_label) {
     $unit5_label = 'L3';
 }
+if (!$inverter_id) {
+    // backward compatibility
+    $inverter_id = 0;
+}
 
 function GetSessionId ($user, $pass) {
     global $host;
@@ -209,7 +213,8 @@ function GetStats() {
 
         return $stats_array;
     } elseif ($device == 'ahoydtu') {
-        $data = json_decode(file_get_contents('http://'.$host.'/api/inverter/id/0'));
+        global $inverter_id;
+        $data = json_decode(file_get_contents('http://'.$host.'/api/inverter/id/'.$inverter_id));
         if ($data->ts_last_success) {
             $time = $data->ts_last_success;
             $stats_array['date'] = date("d.m.Y", $time);
