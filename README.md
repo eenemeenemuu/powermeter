@@ -17,7 +17,7 @@ To record the activity over the day you need to create a cronjob which calls `lo
 ```
 or, if you're on the same host
 ```
-* * * * * cd /path/to/powermeter/ && php check.php
+* * * * * cd /path/to/powermeter/ && php log.php
 ```
 
 ## Statistics
