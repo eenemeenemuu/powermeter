@@ -221,8 +221,17 @@ function GetStats() {
             $stats_array['time'] = date("H:i:s", $time);
             $stats_array['power'] = pm_round($data->ch[0][2], true, 1);
             $stats_array['temp'] = pm_round($data->ch[0][5], true, 1);
-            $stats_array['emeters'][] = pm_round($data->ch[1][0], true, 1); // voltage
-            $stats_array['emeters'][] = pm_round($data->ch[1][1], true, 2); // current
+            if (array_key_exists(2, $data->ch)) {
+                $stats_array['emeters'][] = pm_round($data->ch[1][2], true, 1); // MPPT 1 power
+                $stats_array['emeters'][] = pm_round($data->ch[2][2], true, 1); // MPPT 2 power
+                if (array_key_exists(4, $data->ch)) {
+                    $stats_array['emeters'][] = pm_round($data->ch[3][2], true, 1); // MPPT 3 power
+                    $stats_array['emeters'][] = pm_round($data->ch[4][2], true, 1); // MPPT 4 power
+                }
+            } else {
+                $stats_array['emeters'][] = pm_round($data->ch[1][0], true, 1); // voltage
+                $stats_array['emeters'][] = pm_round($data->ch[1][1], true, 2); // current
+            }
 
             return $stats_array;
         } else {
