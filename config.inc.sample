@@ -13,9 +13,9 @@ $unit2 = ''; // defaults to "°C" if not set; unit of second value; usually this
 $unit2_label = ''; // defaults to "Temperatur" if not set
 $unit3 = ''; // defaults to "W" if not set; unit of third value
 $unit3_label = ''; // defaults to "L1" if not set
-$unit4 = ''; // defaults to "W" if not set; unit of third value
+$unit4 = ''; // defaults to "W" if not set; unit of fourth value
 $unit4_label = ''; // defaults to "L2" if not set
-$unit5 = ''; // defaults to "W" if not set; unit of third value
+$unit5 = ''; // defaults to "W" if not set; unit of fifth value
 $unit5_label = ''; // defaults to "L3" if not set
 
 // optional configuration
