@@ -72,15 +72,15 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
                 if (!(file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string)) {
                     if (!$log_external_only) {
                         file_put_contents($log_file_dir.date_dot2dash($stats['date']).'.csv', $stats_string."\n", FILE_APPEND);
-                        file_put_contents($log_file_dir.'stats.txt', $stats_string);
-                        if (isset($log_extra_array) && $log_extra_array > 0) {
-                            $power_array = json_decode(file_get_contents($log_file_dir.'power_array'));
-                            $power_array[] = $stats_string;
-                            if (count($power_array) > $log_extra_array) {
-                                array_shift($power_array);
-                            }
-                            file_put_contents($log_file_dir.'power_array', json_encode($power_array));
+                    }
+                    file_put_contents($log_file_dir.'stats.txt', $stats_string);
+                    if (isset($log_extra_array) && $log_extra_array > 0) {
+                        $power_array = json_decode(file_get_contents($log_file_dir.'power_array'));
+                        $power_array[] = $stats_string;
+                        if (count($power_array) > $log_extra_array) {
+                            array_shift($power_array);
                         }
+                        file_put_contents($log_file_dir.'power_array', json_encode($power_array));
                     }
                     if ($host_external) {
                         put_contents_external($stats_string);
