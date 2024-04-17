@@ -1,4 +1,8 @@
 <?php
+
+//Set your Timezone specially for UTC Systems
+date_default_timezone_set('Europe/Berlin');
+
 // basic configuration - mandatory
 $device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly, envtec, ahoydtu, esp-epever-controller
 $host = 'tasmotaplug4'; // host name or ip address of measuring device (not needed for envtec)
