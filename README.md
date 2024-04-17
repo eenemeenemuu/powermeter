@@ -72,3 +72,4 @@ We added a basic Dockerfile.
 
 ## Credits / used libraries
 * Chart.js (https://github.com/chartjs/Chart.js)
+* Digital-7 font by Sizenko Alexander
