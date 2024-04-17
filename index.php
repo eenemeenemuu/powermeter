@@ -45,7 +45,7 @@ if (isset($_GET['d']) && (int)$_GET['d']) {
         $power = '-'.str_repeat('9', $digits-1);
     }
     $power = sprintf('%0'.$digits.'d', $power);
-    echo '<span><span id="power">'.$power.'</span>'.$unit1.'</span>';
+    echo '<span onclick="this.requestFullscreen();"><span id="power">'.$power.'</span>'.$unit1.'</span>';
 } else {
     echo '<style>td { width: 50%; padding: 5px; } td.r { text-align: right; } span { font-size: x-large; }</style>';
     echo '</head><body>';
