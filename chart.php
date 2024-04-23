@@ -865,8 +865,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     </script>";
     echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$_GET['y'].'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_year) > 1) {
-        echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' '.$unit1.'h';
-        echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' '.$unit1.'h';
+        echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' k'.$unit1.'h';
+        echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' k'.$unit1.'h';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> k'.$unit1.'h (0 = dynamisch)';
 } else {
