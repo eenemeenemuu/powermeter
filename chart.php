@@ -268,6 +268,14 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
         echo $power_stats['percent_max'];
         die();
     }
+    if (isset($_GET['power_max'])) {
+        echo $power_stats['peak']['p'];
+        die();
+    }
+    if (isset($_GET['wh'])) {
+        echo $power_stats['wh'];
+        die();
+    }
     $wh = pm_round($power_stats['wh'], true);
     $wh_feed = pm_round($power_stats['wh_feed'], true);
     $power_stats['first'] = str_pad($power_stats['first']['h'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['m'], 2, 0, STR_PAD_LEFT).':'.str_pad($power_stats['first']['s'], 2, 0, STR_PAD_LEFT);
