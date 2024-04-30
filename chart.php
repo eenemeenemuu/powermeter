@@ -18,7 +18,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         if (isset($_GET['pos']) && isset($files[$_GET['pos']])) {
             $pos = $_GET['pos'];
         } else {
-            die('Error! File not found: '.htmlentities($_GET['file']));
+            $file = $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
+            die('Error! File not found'.$file);
         }
     }
     function power_stats($value) {
