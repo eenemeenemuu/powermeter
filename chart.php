@@ -3,7 +3,7 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
+if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
     list($files, $pos) = pm_scan_log_file_dir();
 
     if (isset($_GET['today'])) {
@@ -15,7 +15,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday'])) {
     }
 
     if ($pos === false) {
-        die('Error! File not found: '.htmlentities($_GET['file']));
+        if (isset($_GET['pos']) && isset($files[$_GET['pos']])) {
+            $pos = $_GET['pos'];
+        } else {
+            die('Error! File not found: '.htmlentities($_GET['file']));
+        }
     }
     function power_stats($value) {
         global $power_stats, $power_details, $power_details_wh, $power_details_resolution, $device, $unit2;
