@@ -1,6 +1,6 @@
 <?php
 // basic configuration - mandatory
-$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly, envtec, ahoydtu, esp-epever-controller
+$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly_gen2, shelly, envtec, ahoydtu, esp-epever-controller
 $host = 'tasmotaplug4'; // host name or ip address of measuring device (not needed for envtec)
 $refresh_rate = 2; // refresh rate of index.php in seconds
 

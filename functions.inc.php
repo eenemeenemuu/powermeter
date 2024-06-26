@@ -129,6 +129,32 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
+    } elseif ($device == 'shelly_gen2') {
+        $data = json_decode(file_get_contents('http://'.$host.'/rpc/Shelly.GetStatus'), true);
+
+        if (!$data) {
+            return (array('error', 'Unable to query Shelly device. Go to <a href="overview.php">stats history</a>.'));
+        }
+
+        $power = $data['switch:0']['apower'];
+        $time = $data['sys']['unixtime'];
+
+        if (!isset($time)) {
+            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
+        }
+
+        if ($time < 500000000) {
+            $time = time();
+        }
+
+        $stats_array['date'] = date('d.m.Y', $time);
+        $stats_array['time'] = date('H:i:s', $time);
+        $stats_array['power'] = pm_round($power, true, 2);
+        if (isset($data['switch:0']['temperature']['tC'])) {
+            $stats_array['temp'] = pm_round($data['switch:0']['temperature']['tC'], true, 2);
+        }
+
+        return $stats_array;
     } elseif ($device == 'shelly') {
         $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
 
