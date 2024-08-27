@@ -150,7 +150,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             $data_this = explode(",", $line);
             $time_parts = explode(":", $data_this[1]);
             if ($_GET['3p']) {
-                $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6]);
+                $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6], 'l4' => $data_this[7]);
             } elseif ($unit2_display && isset($data_this[3])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
             } else {
@@ -175,6 +175,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     $dataPoints_l1[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l1']));
                     $dataPoints_l2[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l2']));
                     $dataPoints_l3[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l3']));
+                    $dataPoints_l4[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l4']));
                 } else {
                     power_stats($value);
                     if ($value['p'] < 0) {
@@ -209,6 +210,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                 $l1_res = array();
                 $l2_res = array();
                 $l3_res = array();
+                $l4_res = array();
                 $p_res = array();
                 $t_res = array();
                 $p_res_feed = array();
@@ -220,6 +222,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                             $l1_res[] = $value['l1'];
                             $l2_res[] = $value['l2'];
                             $l3_res[] = $value['l3'];
+                            $l4_res[] = $value['l4'];
                         } else {
                             if ($value['p'] < 0) {
                                 $feed_measured = true;
@@ -238,6 +241,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     $dataPoints_l1[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l1_res) ? pm_round(array_sum($l1_res) / count($l1_res)) : 0);
                     $dataPoints_l2[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l2_res) ? pm_round(array_sum($l2_res) / count($l2_res)) : 0);
                     $dataPoints_l3[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l3_res) ? pm_round(array_sum($l3_res) / count($l3_res)) : 0);
+                    $dataPoints_l4[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l4_res) ? pm_round(array_sum($l4_res) / count($l4_res)) : 0);
                 } else {
                     if (count($p_res)) {
                         $y = array_sum($p_res) / count($p_res);
@@ -345,7 +349,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
     echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
-    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($_GET['file'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    for ($i = 1; $i <= 9; $i++) {
+        if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
+            $params .= '&c'.$i.'='.$_GET['c'.$i];
+            $form_params .= '<input type="hidden" name="c'.$i.'" value="'.$_GET['c'.$i].'" />';
+        }
+    }
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
@@ -359,23 +369,46 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    function set_color($param, $default) {
+        if (isset($_GET[$param]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET[$param])) {
+            $rgb = [];
+            $rgb[] = hexdec($_GET[$param][0].$_GET[$param][1]);
+            $rgb[] = hexdec($_GET[$param][2].$_GET[$param][3]);
+            $rgb[] = hexdec($_GET[$param][4].$_GET[$param][5]);
+            return implode(', ', $rgb);
+        } else {
+            return $default;
+        }
+    }
     if ($_GET['3p']) {
-        $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y'))));
-        $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y'))));
-        $dataPoints_l3_empty = true;
-        foreach ($dataPoints_l3 as $value) {
+        $color6 = set_color('c6', $color6);
+        $color7 = set_color('c7', $color7);
+        $color8 = set_color('c8', $color8);
+        $color9 = set_color('c9', $color9);
+        $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y')), min(array_column($dataPoints_l4, 'y'))));
+        $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y')), max(array_column($dataPoints_l4, 'y'))));
+        $dataPoints_l4_empty = true;
+        foreach ($dataPoints_l4 as $value) {
             if ($value['y']) {
-                $dataPoints_l3_empty = false;
+                $dataPoints_l4_empty = false;
                 break;
             }
         }
-        if ($dataPoints_l3_empty) {
-            $unit5 = $unit4;
-            $dataPoints_l2_empty = true;
-            foreach ($dataPoints_l2 as $value) {
+        if ($dataPoints_l4_empty) {
+            $dataPoints_l3_empty = true;
+            foreach ($dataPoints_l3 as $value) {
                 if ($value['y']) {
-                    $dataPoints_l2_empty = false;
+                    $dataPoints_l3_empty = false;
                     break;
+                }
+            }
+            if ($dataPoints_l3_empty) {
+                $dataPoints_l2_empty = true;
+                foreach ($dataPoints_l2 as $value) {
+                    if ($value['y']) {
+                        $dataPoints_l2_empty = false;
+                        break;
+                    }
                 }
             }
         }
@@ -385,8 +418,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(128, 64, 0, 0.5)' ],
-                    borderColor: [ 'rgba(128, 64, 0, 1)' ],
+                    backgroundColor: [ 'rgba($color6, 0.5)' ],
+                    borderColor: [ 'rgba($color6, 1)' ],
                 }";
         if (!$dataPoints_l2_empty) {
             $datasets .= ",{
@@ -395,8 +428,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(0, 0, 0, 0.5)' ],
-                    borderColor: [ 'rgba(0, 0, 0, 1)' ],
+                    backgroundColor: [ 'rgba($color7, 0.5)' ],
+                    borderColor: [ 'rgba($color7, 1)' ],
                 }";
         } else {
             $unit4 = $unit3;
@@ -408,15 +441,30 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(128, 128, 128, 0.5)' ],
-                    borderColor: [ 'rgba(128, 128, 128, 1)' ],
+                    backgroundColor: [ 'rgba($color8, 0.5)' ],
+                    borderColor: [ 'rgba($color8, 1)' ],
                 }";
+        } else {
+            $unit5 = $unit4;
         }
-        if ($unit3 === $unit4 && $unit4 === $unit5) {
+        if (!$dataPoints_l4_empty) {
+            $datasets .= ",{
+                    label: '".strip_tags($unit6_label)."',
+                    yAxisID: 'y_l4',
+                    data: ".json_encode($dataPoints_l4, JSON_NUMERIC_CHECK).",
+                    fill: true,
+                    borderWidth: 2,
+                    backgroundColor: [ 'rgba($color9, 0.5)' ],
+                    borderColor: [ 'rgba($color9, 1)' ],
+                }";
+        } else {
+            $unit6 = $unit5;
+        }
+        if ($unit3 === $unit4 && $unit4 === $unit5 && $unit5 === $unit6) {
             $tooltip_unit = "{ return context.parsed.y + ' $unit3'; }";
             $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3'; } },";
         } else {
-            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } }";
+            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } else if (context.datasetIndex === 3) { return context.parsed.y + ' {$unit6}'; } }";
             $ticks = "";
         }
 
@@ -437,6 +485,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },
                     y_l2: {{$axisY_min}{$axisY_max} display: false },
                     y_l3: {{$axisY_min}{$axisY_max} display: false },
+                    y_l4: {{$axisY_min}{$axisY_max} display: false },
                 },
                 interaction: {
                     mode: 'index',
@@ -448,6 +497,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         });";
     } else {
+        $color1 = set_color('c1', $color1);
+        $color2 = set_color('c2', $color2);
+        $color3 = set_color('c3', $color3);
+        $color4 = set_color('c4', $color4);
+        $color5 = set_color('c5', $color5);
         $datasetIndex = 2;
         if ($feed_measured) {
             $feed_dataset = ",{
@@ -456,8 +510,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(127, 255, 0, 0.5)' ],
-                    borderColor: [ 'rgba(127, 255, 0, 1)' ],
+                    backgroundColor: [ 'rgba($color3, 0.5)' ],
+                    borderColor: [ 'rgba($color3, 1)' ],
                 }";
             $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1'; } ";
             $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },";
@@ -470,8 +524,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(127, 255, 0, 0.15)' ],
-                    borderColor: [ 'rgba(127, 255, 0, 0.3)' ],
+                    backgroundColor: [ 'rgba($color4, 0.15)' ],
+                    borderColor: [ 'rgba($color4, 0.3)' ],
                 }";
             $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1}h'; } ";
             $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },";
@@ -487,7 +541,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                     fill: false,
                     borderWidth: 2,
-                    borderColor: [ 'rgba(200, 100, 0, 0.5)' ],
+                    borderColor: [ 'rgba($color5, 0.5)' ],
                 }";
             $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2'; }";
             $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2'; } } },";
@@ -505,16 +559,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(109, 120, 173, 0.5)' ],
-                    borderColor: [ 'rgba(109, 120, 173, 1)' ],
+                    backgroundColor: [ 'rgba($color1, 0.5)' ],
+                    borderColor: [ 'rgba($color1, 1)' ],
                 },{
                     label: '".($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : $unit1_label)."',
                     yAxisID: 'y_wh',
                     data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                     fill: true,
                     borderWidth: 2,
-                    backgroundColor: [ 'rgba(109, 120, 173, 0.15)' ],
-                    borderColor: [ 'rgba(109, 120, 173, 0.3)' ],
+                    backgroundColor: [ 'rgba($color2, 0.15)' ],
+                    borderColor: [ 'rgba($color2, 0.3)' ],
                 }{$feed_dataset}{$wh_feed_dataset}{$t_dataset}]
             },
             options: {

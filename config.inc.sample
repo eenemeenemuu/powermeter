@@ -17,6 +17,8 @@ $unit4 = ''; // defaults to "W" if not set; unit of fourth value
 $unit4_label = ''; // defaults to "L2" if not set
 $unit5 = ''; // defaults to "W" if not set; unit of fifth value
 $unit5_label = ''; // defaults to "L3" if not set
+$unit6 = ''; // defaults to "W" if not set; unit of sixth value
+$unit6_label = ''; // defaults to "L4" if not set
 
 // optional configuration
 $rounding_precision = 0; // set the number of decimal digits to round to for displaying/logging various values like °C, W and Wh (if possible)
@@ -51,5 +53,16 @@ $power_details_resolution = 50; // display the duration the device produces/cons
 $host_external = 'https://example.com/my_folder/'; // additional external host for logging and display - must end with trailing slash (/)! - keep empty or comment out to disable
 $host_auth_key = 'abc123'; // auth key must match on external host
 $log_external_only = false; // set to "true" if you don't want to keep the log data on your local device after it has been successfully transmitted to the external host
+
+// optional: custom graph colors; format: 'rrr, ggg, bbb'
+$color1 = ''; // color for unit1 (see above)
+$color2 = ''; // color for unit1 over time
+$color3 = ''; // color for unit1 for feed-in
+$color4 = ''; // color for unit1 for feed-in over time
+$color5 = ''; // color for unit2 (see above)
+$color6 = ''; // color for unit3 (see above)
+$color7 = ''; // color for unit4 (see above)
+$color8 = ''; // color for unit5 (see above)
+$color9 = ''; // color for unit6 (see above)
 
 //EOF

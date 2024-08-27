@@ -40,6 +40,39 @@ if (!$unit5) {
 if (!$unit5_label) {
     $unit5_label = 'L3';
 }
+if (!$unit6) {
+    $unit6 = 'W';
+}
+if (!$unit6_label) {
+    $unit6_label = 'L4';
+}
+if (!$color1) {
+    $color1 = '109, 120, 173';
+}
+if (!$color2) {
+    $color2 = '109, 120, 173';
+}
+if (!$color3) {
+    $color3 = '127, 255, 0';
+}
+if (!$color4) {
+    $color4 = '127, 255, 0';
+}
+if (!$color5) {
+    $color5 = '200, 100, 0';
+}
+if (!$color6) {
+    $color6 = '128, 64, 0';
+}
+if (!$color7) {
+    $color7 = '0, 0, 0';
+}
+if (!$color8) {
+    $color8 = '128, 128, 128';
+}
+if (!$color9) {
+    $color9 = '0, 64, 128';
+}
 if (!$inverter_id) {
     // backward compatibility
     $inverter_id = 0;
