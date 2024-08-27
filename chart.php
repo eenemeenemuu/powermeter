@@ -16,7 +16,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
 
     if ($pos === false) {
         if (isset($_GET['pos']) && isset($files[$_GET['pos']])) {
-            $pos = $_GET['pos'];
+            $pos = (int)$_GET['pos'];
         } else {
             $file = $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
             die('Error! File not found'.$file);
@@ -349,6 +349,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
     echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
     $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
+    if (isset($_GET['file'])) {
+        $form_params = '<input type="hidden" name="file" value="'.$_GET['file'].'" />';
+    } else {
+        $form_params = '<input type="hidden" name="pos" value="'.$_GET['pos'].'" />';
+    }
     for ($i = 1; $i <= 9; $i++) {
         if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
             $params .= '&c'.$i.'='.$_GET['c'.$i];
@@ -601,7 +606,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             document.body.style.opacity = '0.3';
         }, false);
         </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="file" value="'.$_GET['file'].'" />';
+    echo '<form method="get" style="display: inline;">'.$form_params;
     if (!$_GET['3p']) {
         if ($feed_measured) {
             echo $unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h | ';
