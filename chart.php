@@ -390,8 +390,20 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $color7 = set_color('c7', $color7);
         $color8 = set_color('c8', $color8);
         $color9 = set_color('c9', $color9);
-        $axisY_min = get_y_min_max('min', min(min(array_column($dataPoints_l1, 'y')), min(array_column($dataPoints_l2, 'y')), min(array_column($dataPoints_l3, 'y')), min(array_column($dataPoints_l4, 'y'))));
-        $axisY_max = get_y_min_max('max', max(max(array_column($dataPoints_l1, 'y')), max(array_column($dataPoints_l2, 'y')), max(array_column($dataPoints_l3, 'y')), max(array_column($dataPoints_l4, 'y'))));
+        $axisY_min_array = [];
+        $axisY_max_array = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $min_this = min(array_column(${'dataPoints_l'.$i}, 'y'));
+            $max_this = max(array_column(${'dataPoints_l'.$i}, 'y'));
+            if ($min_this !== null) {
+                $axisY_min_array[] = $min_this;
+            }
+            if ($max_this !== null) {
+                $axisY_max_array[] = $max_this;
+            }
+        }
+        $axisY_min = get_y_min_max('min', min($axisY_min_array));
+        $axisY_max = get_y_min_max('max', max($axisY_max_array));
         $dataPoints_l4_empty = true;
         foreach ($dataPoints_l4 as $value) {
             if ($value['y']) {
@@ -426,6 +438,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color6, 0.5)' ],
                     borderColor: [ 'rgba($color6, 1)' ],
                 }";
+        $scales = "y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },";
         if (!$dataPoints_l2_empty) {
             $datasets .= ",{
                     label: '".strip_tags($unit4_label)."',
@@ -436,6 +449,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color7, 0.5)' ],
                     borderColor: [ 'rgba($color7, 1)' ],
                 }";
+            $scales .= "
+                    y_l2: {{$axisY_min}{$axisY_max} display: false },";
         } else {
             $unit4 = $unit3;
         }
@@ -449,6 +464,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color8, 0.5)' ],
                     borderColor: [ 'rgba($color8, 1)' ],
                 }";
+            $scales .= "
+                    y_l3: {{$axisY_min}{$axisY_max} display: false },";
         } else {
             $unit5 = $unit4;
         }
@@ -462,6 +479,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color9, 0.5)' ],
                     borderColor: [ 'rgba($color9, 1)' ],
                 }";
+            $scales .= "
+                    y_l4: {{$axisY_min}{$axisY_max} display: false },";
         } else {
             $unit6 = $unit5;
         }
@@ -486,11 +505,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     legend: { display: true },
                     tooltip: { position: 'nearest', callbacks: { label: function(context) $tooltip_unit } }
                 },
-                scales: { 
-                    y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },
-                    y_l2: {{$axisY_min}{$axisY_max} display: false },
-                    y_l3: {{$axisY_min}{$axisY_max} display: false },
-                    y_l4: {{$axisY_min}{$axisY_max} display: false },
+                scales: {
+                    $scales
                 },
                 interaction: {
                     mode: 'index',
