@@ -730,10 +730,6 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
 
     echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
-
-    if ($pos === false) {
-        die('Error! No data found for '.$month);
-    }
     $kwh = pm_round(array_sum($chart_stats_this_month)/1000);
     if (isset($_GET['download'])) {
         header('Content-type: text/csv');
@@ -862,10 +858,6 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
 
     echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
-
-    if ($pos === false) {
-        die('Error! No data found for '.$year);
-    }
     $kwh = pm_round(array_sum($chart_stats_this_year));
     foreach ($chart_stats_this_year as $key => $value) {
         $chart_stats_this_year[$key] = pm_round($value);
