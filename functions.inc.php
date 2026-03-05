@@ -1,5 +1,13 @@
 <?php
 
+// Load new src/ classes for API and future use
+require_once __DIR__ . '/src/Config.php';
+require_once __DIR__ . '/src/Helpers.php';
+require_once __DIR__ . '/src/DeviceDriver.php';
+require_once __DIR__ . '/src/DataStoreInterface.php';
+require_once __DIR__ . '/src/CsvDataStore.php';
+require_once __DIR__ . '/src/StatsCalculator.php';
+
 if (!$unit1) {
     $unit1 = 'W';
 }
@@ -73,9 +81,21 @@ if (!$color8) {
 if (!$color9) {
     $color9 = '0, 64, 128';
 }
-if (!$inverter_id) {
+if (!isset($inverter_id) || !$inverter_id) {
     // backward compatibility
     $inverter_id = 0;
+}
+if (!$anker_email) {
+    $anker_email = '';
+}
+if (!$anker_password) {
+    $anker_password = '';
+}
+if (!$anker_country) {
+    $anker_country = 'DE';
+}
+if (!$anker_site_id) {
+    $anker_site_id = '';
 }
 
 function GetSessionId ($user, $pass) {
@@ -312,6 +332,20 @@ function GetStats() {
         } else {
             return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
         }
+    } elseif ($device == 'anker_solix') {
+        // Delegate to DeviceDriver class (requires PHP openssl extension)
+        global $anker_email, $anker_password, $anker_country, $anker_site_id, $log_file_dir, $rounding_precision, $power_threshold;
+        $config = Config::getInstance();
+        $config->device = $device;
+        $config->anker_email = $anker_email;
+        $config->anker_password = $anker_password;
+        $config->anker_country = $anker_country;
+        $config->anker_site_id = $anker_site_id;
+        $config->log_file_dir = $log_file_dir;
+        $config->rounding_precision = $rounding_precision;
+        $config->power_threshold = $power_threshold;
+        $driver = new DeviceDriver($config);
+        return $driver->getStats();
     } else {
         return (array('error', 'Invalid device configured.'));
     }
@@ -342,8 +376,12 @@ function pm_scan_log_file_dir() {
     $i = 0;
     $pos = false;
     $files = [];
+    $file_dates = [];
+    if (!is_dir($log_file_dir)) {
+        return [$files, $pos, $file_dates];
+    }
     foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
-        if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt') {
+        if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt' || $file == 'power_array' || $file == 'anker_token.json' || $file == 'anker_mqtt_cache.json' || substr($file, 0, 5) == 'mqtt_') {
             continue;
         }
         if (isset($_GET['file']) && ($file == $_GET['file'] || $file == $_GET['file'].'.csv' || $file == $_GET['file'].'.csv.gz' || $file == $_GET['file'].'.gz')) {
@@ -355,20 +393,27 @@ function pm_scan_log_file_dir() {
     foreach ($files as $key => $file) {
         $file_dates[] = $file['date'];
     }
-    array_unique($file_dates);
+    $file_dates = array_unique($file_dates);
     return [$files, $pos, $file_dates];
 }
 
 function pm_scan_chart_stats() {
     global $log_file_dir, $file_dates;
-    foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
+    $chart_stats = [];
+    $chart_stats_month = [];
+    $chart_stats_month_feed = [];
+    $stats_file = $log_file_dir.'chart_stats.csv';
+    if (!file_exists($stats_file)) {
+        return [$chart_stats, $chart_stats_month, $chart_stats_month_feed];
+    }
+    foreach (explode("\n", file_get_contents($stats_file)) as $line) {
         $stat_parts = explode(',', $line);
         if ($stat_parts[0]) {
             $chart_stats[$stat_parts[0]] = $stat_parts;
             $date_parts = explode('-', $stat_parts[0]);
-            $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
+            $chart_stats_month[$date_parts[0]][$date_parts[1]] = ($chart_stats_month[$date_parts[0]][$date_parts[1]] ?? 0) + $stat_parts[1];
             if (isset($stat_parts[6])) {
-                $chart_stats_month_feed[$date_parts[0]][$date_parts[1]] += $stat_parts[6];
+                $chart_stats_month_feed[$date_parts[0]][$date_parts[1]] = ($chart_stats_month_feed[$date_parts[0]][$date_parts[1]] ?? 0) + $stat_parts[6];
             }
         }
     }

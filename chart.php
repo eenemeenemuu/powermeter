@@ -3,22 +3,31 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
+if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
     list($files, $pos) = pm_scan_log_file_dir();
+
+    if (empty($files)) {
+        die('Noch keine Daten vorhanden.');
+    }
 
     if (isset($_GET['today'])) {
         header("Location: chart.php?file={$files[0]['date']}");
+        exit;
     }
 
     if (isset($_GET['yesterday'])) {
+        if (!isset($files[1])) {
+            die('Noch nicht genug Daten vorhanden.');
+        }
         header("Location: chart.php?file={$files[1]['date']}");
+        exit;
     }
 
     if ($pos === false) {
         if (isset($_GET['pos']) && isset($files[$_GET['pos']])) {
             $pos = (int)$_GET['pos'];
         } else {
-            $file = $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
+            $file = isset($_GET['file']) && $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
             die('Error! File not found'.$file);
         }
     }
@@ -78,6 +87,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
     function get_y_min_max($min_max, $data) {
         $multiplier = 1;
+        $floor_ceil = false;
         while (!$floor_ceil) {
             foreach ([1, 2, 5] as $i) {
                 if (abs($data) < $i * $multiplier) {
@@ -95,7 +105,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         return false;
     }
-    $res = $_GET['res'] ? $_GET['res'] : $res;
+    $res = !empty($_GET['res']) ? $_GET['res'] : $res;
     $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
     $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
     if ($t1 > $t2) {
@@ -111,7 +121,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     if (strpos($files[$pos]['name'], '.gz') !== false) {
         $file_is_compressed = true;
         $data = gzdecode($data);
-    } elseif ($files[$pos]['date'] == $files[$pos-1]['date']) {
+    } elseif ($pos > 0 && $files[$pos]['date'] == $files[$pos-1]['date']) {
         $data2 = file_get_contents($log_file_dir.$files[$pos-1]['name']);
         $data .= gzdecode($data2);
     }
@@ -133,7 +143,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     $dataPoints_wh_feed = array();
     $dataPoints_feed = array();
     $dataPoints_y_max = 0;
-    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0);
+    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0, 'wh_feed' => 0, 'last_p' => 0, 'last_timestamp' => 0);
     if ($unit2 == '%') {
         $power_stats['percent_min'] = PHP_INT_MAX;
         $power_stats['percent_max'] = PHP_INT_MIN;
@@ -149,7 +159,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         if (trim($line)) {
             $data_this = explode(",", $line);
             $time_parts = explode(":", $data_this[1]);
-            if ($_GET['3p']) {
+            if (!empty($_GET['3p'])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6], 'l4' => $data_this[7]);
             } elseif ($unit2_display && isset($data_this[3])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
@@ -161,7 +171,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         }
     }
-    if ($_GET['refresh'] && $pos === 0) {
+    if (!empty($_GET['refresh']) && $pos === 0) {
         $meta_refresh = '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $data_last_h = intval($data[array_key_last($data)]['h']);
         if ($t2 < $data_last_h) {
@@ -171,7 +181,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     if ($res == -1) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                if ($_GET['3p']) {
+                if (!empty($_GET['3p'])) {
                     $dataPoints_l1[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l1']));
                     $dataPoints_l2[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l2']));
                     $dataPoints_l3[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l3']));
@@ -218,7 +228,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                 $y_feed = 0;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
-                        if ($_GET['3p']) {
+                        if (!empty($_GET['3p'])) {
                             $l1_res[] = $value['l1'];
                             $l2_res[] = $value['l2'];
                             $l3_res[] = $value['l3'];
@@ -237,7 +247,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                         }
                     }
                 }
-                if ($_GET['3p']) {
+                if (!empty($_GET['3p'])) {
                     $dataPoints_l1[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l1_res) ? pm_round(array_sum($l1_res) / count($l1_res)) : 0);
                     $dataPoints_l2[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l2_res) ? pm_round(array_sum($l2_res) / count($l2_res)) : 0);
                     $dataPoints_l3[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l3_res) ? pm_round(array_sum($l3_res) / count($l3_res)) : 0);
@@ -317,7 +327,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             file_put_contents($log_file_dir.$file, $data, FILE_APPEND);
         }
     }
-    if ($pos > 0 && $t1 == 0 && $t2 == 23 && !$_GET['3p']) {
+    if ($pos > 0 && $t1 == 0 && $t2 == 23 && empty($_GET['3p'])) {
         $stats_str = "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}";
         if ($power_stats['wh_feed']) {
             $stats_str .= ','.$wh_feed;
@@ -333,8 +343,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             $files[$pos]['name'] = compress_file($files[$pos]['name'], $lines);
         }
     }
-    $get_fix = trim($_GET['fix']);
+    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     } elseif ($feed_measured) {
@@ -344,15 +355,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     echo '<title>'.$date;
     if ($feed_measured) {
         echo ' ('.$unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h)';
-    } elseif (!$_GET['3p']) {
+    } elseif (empty($_GET['3p'])) {
         echo ' ('.$unit1_label.': '.$wh.' '.$unit1.'h)';
     }
-    echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
-    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
+    echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.($meta_refresh ?? '');
+    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.(!empty($_GET['3p']) ? '&3p=on' : '');
     if (isset($_GET['file'])) {
-        $form_params = '<input type="hidden" name="file" value="'.$_GET['file'].'" />';
+        $form_params = '<input type="hidden" name="file" value="'.htmlspecialchars($_GET['file']).'" />';
     } else {
-        $form_params = '<input type="hidden" name="pos" value="'.$_GET['pos'].'" />';
+        $form_params = '<input type="hidden" name="pos" value="'.htmlspecialchars($_GET['pos'] ?? '').'" />';
     }
     for ($i = 1; $i <= 9; $i++) {
         if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
@@ -385,7 +396,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             return $default;
         }
     }
-    if ($_GET['3p']) {
+    if (!empty($_GET['3p'])) {
         $color6 = set_color('c6', $color6);
         $color7 = set_color('c7', $color7);
         $color8 = set_color('c8', $color8);
@@ -524,6 +535,16 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $color4 = set_color('c4', $color4);
         $color5 = set_color('c5', $color5);
         $datasetIndex = 2;
+        $feed_dataset = '';
+        $feed_tooltip = '';
+        $feed_scale = '';
+        $wh_feed_dataset = '';
+        $wh_feed_tooltip = '';
+        $wh_feed_scale = '';
+        $axisY_max_wh = '';
+        $t_dataset = '';
+        $t_tooltip = '';
+        $t_scale = '';
         if ($feed_measured) {
             $feed_dataset = ",{
                     label: '".strip_tags($unit1_label_out)."',
@@ -623,7 +644,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }, false);
         </script>";
     echo '<form method="get" style="display: inline;">'.$form_params;
-    if (!$_GET['3p']) {
+    if (empty($_GET['3p'])) {
         if ($feed_measured) {
             echo $unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h | ';
         } else {
@@ -643,7 +664,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo "<option value=\"$value\"$selected>$text</option>";
     }
     echo '</select>';
-    if (!$_GET['3p']) {
+    if (empty($_GET['3p'])) {
         echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> '.$unit1.' (0 = dynamisch)';
     } else {
         echo '<input type="hidden" name="fix" value="'.$fix_axis_y.'" />';
@@ -661,20 +682,20 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
-    if ($extra_data || $_GET['3p']) {
-        $checked = $_GET['3p'] ? ' checked="checked"' : '';
+    if ($extra_data || !empty($_GET['3p'])) {
+        $checked = !empty($_GET['3p']) ? ' checked="checked"' : '';
         echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Extradaten anzeigen</label>';
     }
     if ($pos === 0) {
-        $checked = $_GET['refresh'] ? ' checked="checked"' : '';
+        $checked = !empty($_GET['refresh']) ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
     }
     echo '</form>';
-    if (!$_GET['3p']) {
-        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
+    if (empty($_GET['3p'])) {
+        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.(!empty($_GET['refresh']) ? '&refresh' : '').'\'">#max</button>';
     }
     echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
-    if ($power_details_resolution && !$_GET['3p']) {
+    if ($power_details_resolution && empty($_GET['3p'])) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? $unit1_label_in : $unit1_label).':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div></div>';
@@ -683,7 +704,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
     }
     echo '</body></html>';
-} elseif ($_GET['m']) {
+} elseif (isset($_GET['m']) && $_GET['m']) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $unit1_label = $unit1_label_out;
@@ -741,8 +762,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         die();
     }
-    $get_fix = trim($_GET['fix']);
+    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y * 8 / 100) * 100;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
@@ -811,13 +833,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$_GET['m'].'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.htmlspecialchars($_GET['m']).'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_month) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_month).' '.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' '.$unit1.'h';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> '.$unit1.'h (0 = dynamisch)';
-} elseif ($_GET['y']) {
+} elseif (isset($_GET['y']) && $_GET['y']) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $unit1_label = $unit1_label_out;
@@ -872,8 +894,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         die();
     }
-    $get_fix = trim($_GET['fix']);
+    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y / 50) * 10;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
