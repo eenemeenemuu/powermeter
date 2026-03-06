@@ -943,7 +943,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$_GET['y'].'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$year.'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_year) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' k'.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' k'.$unit1.'h';
