@@ -1,0 +1,27 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, main, 'feature/**', 'fix/**']
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t powermeter .
+
+      - name: Create test config
+        run: cp config.inc.sample config.inc.php
+
+      - name: Run tests
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/tests:/var/www/html/tests:ro \
+            -v ${{ github.workspace }}/config.inc.php:/var/www/html/config.inc.php:ro \
+            powermeter php tests/run.php
