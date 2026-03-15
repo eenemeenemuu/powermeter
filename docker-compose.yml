@@ -1,0 +1,24 @@
+services:
+  # Apache (default)
+  powermeter:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - ./data:/var/www/html/data
+      - ./config.inc.php:/var/www/html/config.inc.php:ro
+    restart: unless-stopped
+
+  # FrankenPHP + Swow (optional, use: docker compose up frankenphp)
+  frankenphp:
+    build:
+      context: .
+      dockerfile: Dockerfile.frankenphp
+    ports:
+      - "80:80"
+    volumes:
+      - ./data:/app/public/data
+      - ./config.inc.php:/app/public/config.inc.php:ro
+    restart: unless-stopped
+    profiles:
+      - frankenphp
