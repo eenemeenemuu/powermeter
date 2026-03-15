@@ -3,15 +3,75 @@
 require('config.inc.php');
 require('functions.inc.php');
 
+// Multi-device resolution
+$config = Config::load(file_exists('config.inc.php') ? 'config.inc.php' : null);
+$isMultiDevice = $config->isMultiDevice();
+$deviceMeta = pm_get_device_meta();
+$activeDevice = null;
+$deviceSubdir = null;
+$deviceParam = '';
+$isGesamtMode = false;
+$activeGroup = null;
+$groupDeviceMeta = [];
+
+if ($isMultiDevice) {
+    $gesamtGroups = $config->getGesamtGroups();
+    $defaultGroupId = $gesamtGroups[0]['id'] ?? 'gesamt';
+    $activeDevice = $_GET['device'] ?? $defaultGroupId;
+    $deviceParam = '&device=' . htmlspecialchars($activeDevice);
+    $activeGroup = $config->getGesamtGroup($activeDevice);
+    $isGesamtMode = $activeGroup !== null;
+
+    if (!$isGesamtMode && isset($deviceMeta[$activeDevice])) {
+        // Override global units/labels with device-specific values
+        $meta = $deviceMeta[$activeDevice];
+        $unit1 = $meta['unit1'];
+        $unit1_label = $meta['unit1_label'];
+        $unit1_label_in = $meta['unit1_label_in'];
+        $unit1_label_out = $meta['unit1_label_out'];
+        $unit2 = $meta['unit2'];
+        $unit2_label = $meta['unit2_label'];
+        $unit2_display = $meta['unit2_display'];
+        $deviceSubdir = $activeDevice;
+    }
+    // Filter deviceMeta to only devices in active group
+    if ($isGesamtMode) {
+        $groupDeviceIds = $activeGroup['devices'];
+        $groupDeviceMeta = array_intersect_key($deviceMeta, array_flip($groupDeviceIds));
+    }
+}
+
 if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
-    list($files, $pos) = pm_scan_log_file_dir();
+    // For gesamt mode, scan all device subdirectories and merge dates
+    if ($isMultiDevice && $isGesamtMode) {
+        $allDates = [];
+        foreach ($groupDeviceMeta as $id => $meta) {
+            list($devFiles) = pm_scan_log_file_dir($id);
+            foreach ($devFiles as $f) {
+                $allDates[$f['date']] = true;
+            }
+        }
+        krsort($allDates);
+        $files = [];
+        $pos = false;
+        $i = 0;
+        foreach ($allDates as $date => $_) {
+            if (isset($_GET['file']) && $_GET['file'] == $date) {
+                $pos = $i;
+            }
+            $files[] = ['date' => $date, 'name' => $date . '.csv'];
+            $i++;
+        }
+    } else {
+        list($files, $pos) = pm_scan_log_file_dir($deviceSubdir);
+    }
 
     if (empty($files)) {
         die('Noch keine Daten vorhanden.');
     }
 
     if (isset($_GET['today'])) {
-        header("Location: chart.php?file={$files[0]['date']}");
+        header("Location: chart.php?file={$files[0]['date']}{$deviceParam}");
         exit;
     }
 
@@ -19,7 +79,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         if (!isset($files[1])) {
             die('Noch nicht genug Daten vorhanden.');
         }
-        header("Location: chart.php?file={$files[1]['date']}");
+        header("Location: chart.php?file={$files[1]['date']}{$deviceParam}");
         exit;
     }
 
@@ -45,7 +105,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         if ($value_abs['p'] && $value_abs['p'] > $power_stats['peak']['p']) {
             $power_stats['peak'] = $value_abs;
         }
-        if ($unit2 == '%') {
+        if ($unit2 == '%' && isset($value['t'])) {
             $power_stats['percent_min'] = min($power_stats['percent_min'], $value['t']);
             $power_stats['percent_max'] = max($power_stats['percent_max'], $value['t']);
         }
@@ -71,13 +131,14 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $power_stats['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
     }
     function compress_file($file, $data) {
-        global $log_file_dir;
+        global $log_file_dir, $deviceSubdir;
+        $dir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
         if (function_exists('gzencode')) {
             $data = implode("\n", $data);
             $gzdata = gzencode($data, 7);
             if ($gzdata) {
-                if (file_put_contents($log_file_dir.$file.'.gz', $gzdata)) {
-                    if (unlink($log_file_dir.$file)) {
+                if (file_put_contents($dir.$file.'.gz', $gzdata)) {
+                    if (unlink($dir.$file)) {
                         return $file.'.gz';
                     }
                 }
@@ -106,8 +167,8 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         return false;
     }
     $res = !empty($_GET['res']) ? $_GET['res'] : $res;
-    $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
-    $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
+    $t1 = $_GET['t1'] ?? 0;
+    $t2 = $_GET['t2'] ?? 23;
     if ($t1 > $t2) {
         $t1 = $t2;
     }
@@ -116,17 +177,32 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $t1 = 0;
         $t2 = 23;
     }
-    $data = file_get_contents($log_file_dir.$files[$pos]['name']);
+
+    // Skip single-file reading for gesamt mode (handled later)
+    if ($isMultiDevice && $isGesamtMode) {
+        $date = $files[$pos]['date'];
+        $date_parts = explode('-', $date);
+        $date = $date_parts[2] . '.' . $date_parts[1] . '.' . $date_parts[0];
+        $wh = 0;
+        $wh_feed = 0;
+        $power_stats = ['first' => [], 'last' => [], 'peak' => ['p' => 0], 'wh' => 0, 'wh_feed' => 0, 'last_p' => 0, 'last_timestamp' => 0];
+        $feed_measured = false;
+        $extra_data = false;
+        goto gesamt_chart_render;
+    }
+
+    $dataDir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
+    $data = file_get_contents($dataDir.$files[$pos]['name']);
     $file_is_compressed = false;
     if (strpos($files[$pos]['name'], '.gz') !== false) {
         $file_is_compressed = true;
         $data = gzdecode($data);
     } elseif ($pos > 0 && $files[$pos]['date'] == $files[$pos-1]['date']) {
-        $data2 = file_get_contents($log_file_dir.$files[$pos-1]['name']);
+        $data2 = file_get_contents($dataDir.$files[$pos-1]['name']);
         $data .= gzdecode($data2);
     }
     $data = trim($data);
-    if (isset($_GET['download'])) {
+    if (isset($_GET['download']) && !$isGesamtMode) {
         header('Content-type: text/csv');
         header('Content-Disposition: attachment; filename="'.$files[$pos]['date'].'.csv"');
         ob_clean();
@@ -209,7 +285,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             }
         }
         if (isset($_GET['max'])) {
-            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}".(isset($_GET['refresh']) ? '&refresh=on' : ''));
+            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}".(isset($_GET['refresh']) ? '&refresh=on' : '').$deviceParam);
         }
     } else {
         if ($t1 === 0) {
@@ -305,17 +381,18 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $power_details[$key] = gmdate("H:i:s", $value);
     }
     function save_stats($file, $data) {
-        global $log_file_dir, $files, $pos;
+        global $log_file_dir, $files, $pos, $deviceSubdir;
+        $dir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
         $save = true;
-        if (file_exists($log_file_dir.$file)) {
-            foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
+        if (file_exists($dir.$file)) {
+            foreach (explode("\n", file_get_contents($dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
                 if ($stat_parts[0] == $files[$pos]['date']) {
                     $line .= "\n";
                     if ($line != $data) {
-                        $contents = file_get_contents($log_file_dir.$file);
+                        $contents = file_get_contents($dir.$file);
                         $contents = str_replace($line, '', $contents);
-                        file_put_contents($log_file_dir.$file, $contents);
+                        file_put_contents($dir.$file, $contents);
                     } else {
                         $save = false;
                     }
@@ -324,7 +401,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             }
         }
         if ($save) {
-            file_put_contents($log_file_dir.$file, $data, FILE_APPEND);
+            file_put_contents($dir.$file, $data, FILE_APPEND);
         }
     }
     if ($pos > 0 && $t1 == 0 && $t2 == 23 && empty($_GET['3p'])) {
@@ -343,7 +420,8 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             $files[$pos]['name'] = compress_file($files[$pos]['name'], $lines);
         }
     }
-    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
+    gesamt_chart_render:
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
     $axisY_max = '';
     if ($fix_axis_y) {
@@ -359,11 +437,14 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         echo ' ('.$unit1_label.': '.$wh.' '.$unit1.'h)';
     }
     echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.($meta_refresh ?? '');
-    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.(!empty($_GET['3p']) ? '&3p=on' : '');
+    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.(!empty($_GET['3p']) ? '&3p=on' : '').$deviceParam;
     if (isset($_GET['file'])) {
         $form_params = '<input type="hidden" name="file" value="'.htmlspecialchars($_GET['file']).'" />';
     } else {
         $form_params = '<input type="hidden" name="pos" value="'.htmlspecialchars($_GET['pos'] ?? '').'" />';
+    }
+    if ($isMultiDevice) {
+        $form_params .= '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />';
     }
     for ($i = 1; $i <= 9; $i++) {
         if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
@@ -371,7 +452,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             $form_params .= '<input type="hidden" name="c'.$i.'" value="'.$_GET['c'.$i].'" />';
         }
     }
-    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).$deviceParam.'" title="Zur Monatsansicht">📅</a></div><div style="float: right;">'.(!$isGesamtMode ? '<a id="download" href="chart.php?file='.$files[$pos]['date'].'&download'.$deviceParam.'" title="Daten herunterladen">💾</a>' : '').'</div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
@@ -385,6 +466,154 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    if ($isMultiDevice) {
+        $tabQuery = 'file=' . htmlspecialchars($files[$pos]['date']) . '&res=' . $res . '&fix=' . $fix_axis_y . '&t1=' . $t1 . '&t2=' . $t2;
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
+
+    // === Gesamt combined daily chart ===
+    if ($isMultiDevice && $isGesamtMode) {
+        $gesamtColors = ['109, 120, 173', '220, 80, 80', '80, 180, 80', '200, 150, 50', '150, 80, 200', '80, 200, 200'];
+        $gesamtDatasets = [];
+        $gesamtSumByTime = [];
+        $gesamtYMax = 0;
+        $colorIdx = 0;
+        $gesamtWh = [];
+
+        foreach ($groupDeviceMeta as $devId => $devMeta) {
+            $devDir = $log_file_dir . $devId . '/';
+            $devFile = $devDir . $files[$pos]['date'] . '.csv';
+            $devFileGz = $devDir . $files[$pos]['date'] . '.csv.gz';
+            $devData = '';
+            if (file_exists($devFile)) {
+                $devData = file_get_contents($devFile);
+            } elseif (file_exists($devFileGz)) {
+                $devData = gzdecode(file_get_contents($devFileGz));
+            }
+            if (!$devData) {
+                $colorIdx++;
+                continue;
+            }
+            $devLines = array_unique(explode("\n", trim($devData)));
+            sort($devLines);
+            $devPoints = [];
+            $devWh = 0;
+            $lastP = 0;
+            $lastTs = 0;
+            foreach ($devLines as $line) {
+                if (!trim($line)) continue;
+                $parts = explode(",", $line);
+                $tp = explode(":", $parts[1]);
+                $h = intval($tp[0]);
+                $m = intval($tp[1]);
+                $s = intval($tp[2] ?? 0);
+                if ($h < $t1 || $h > $t2) continue;
+                $p = floatval($parts[2]);
+                $ts = mktime($h, $m, $s);
+                if ($lastTs && ($ts - $lastTs) < 300) {
+                    $devWh += abs($lastP) * ($ts - $lastTs) / 3600;
+                }
+                $lastP = $p;
+                $lastTs = $ts;
+                $timeKey = ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m);
+                if ($res > 0) {
+                    $timeKey = ($h < 10 ? "0".$h : $h).":".(floor($m / $res) * $res < 10 ? "0".(floor($m / $res) * $res) : floor($m / $res) * $res);
+                }
+                $devPoints[$timeKey][] = abs($p);
+            }
+            // Average per time slot
+            $devDataPoints = [];
+            foreach ($devPoints as $time => $values) {
+                $avg = array_sum($values) / count($values);
+                $devDataPoints[] = ['x' => $time, 'y' => pm_round($avg)];
+                $gesamtSumByTime[$time] = ($gesamtSumByTime[$time] ?? 0) + $avg;
+                if ($avg > $gesamtYMax) $gesamtYMax = $avg;
+            }
+            $color = $devMeta['color1'] ?? ($gesamtColors[$colorIdx % count($gesamtColors)]);
+            $gesamtDatasets[] = [
+                'label' => strip_tags($devMeta['label']),
+                'data' => $devDataPoints,
+                'color' => $color,
+            ];
+            $gesamtWh[$devId] = pm_round($devWh, true);
+            $colorIdx++;
+        }
+
+        // Sum dataset
+        $sumPoints = [];
+        ksort($gesamtSumByTime);
+        foreach ($gesamtSumByTime as $time => $sum) {
+            $sumPoints[] = ['x' => $time, 'y' => pm_round($sum)];
+            if ($sum > $gesamtYMax) $gesamtYMax = $sum;
+        }
+
+        $get_fix = trim($_GET['fix'] ?? '');
+        $fix_axis_y_g = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
+        $axisY_max_g = $fix_axis_y_g ? " max: $fix_axis_y_g," : '';
+
+        // Build datasets JS
+        $dsJs = '';
+        foreach ($gesamtDatasets as $ds) {
+            if ($dsJs) $dsJs .= ',';
+            $dsJs .= "{
+                label: '" . $ds['label'] . "',
+                yAxisID: 'y_p',
+                data: " . json_encode($ds['data'], JSON_NUMERIC_CHECK) . ",
+                fill: false,
+                borderWidth: 2,
+                borderColor: ['rgba(" . $ds['color'] . ", 1)'],
+                backgroundColor: ['rgba(" . $ds['color'] . ", 0.3)'],
+            }";
+        }
+        // Add Gesamt sum dataset
+        $dsJs .= ",{
+            label: '" . htmlspecialchars($activeGroup['label']) . "',
+            yAxisID: 'y_p',
+            data: " . json_encode($sumPoints, JSON_NUMERIC_CHECK) . ",
+            fill: true,
+            borderWidth: 2,
+            borderColor: ['rgba(0, 0, 0, 0.6)'],
+            backgroundColor: ['rgba(0, 0, 0, 0.08)'],
+            borderDash: [5, 5],
+        }";
+
+        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
+        <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [$dsJs] },
+            options: {
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' $unit1'; } } }
+                },
+                scales: {
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max_g ticks: { callback: function(value) { return value + ' $unit1'; } } },
+                },
+                elements: { point: { radius: 0, hitRadius: 10 } },
+                maintainAspectRatio: false,
+                animation: false,
+                normalized: true,
+            }
+        });
+        window.addEventListener('swap', function(event) {
+            if (event.detail.direction == 'left') { location.href = document.getElementById('next').href; }
+            if (event.detail.direction == 'right') { location.href = document.getElementById('prev').href; }
+            document.body.style.opacity = '0.3';
+        }, false);
+        </script>";
+
+        // Summary line
+        $whParts = [];
+        foreach ($gesamtWh as $devId => $wh) {
+            $whParts[] = htmlspecialchars($deviceMeta[$devId]['label']) . ': ' . $wh . ' ' . $unit1 . 'h';
+        }
+        echo implode(' | ', $whParts);
+        echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].$deviceParam.'\'">Reset</button>';
+        echo '</body></html>';
+    } else {
+    // === Per-device or single-device daily chart (existing code) ===
     function set_color($param, $default) {
         if (isset($_GET[$param]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET[$param])) {
             $rgb = [];
@@ -692,9 +921,9 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
     }
     echo '</form>';
     if (empty($_GET['3p'])) {
-        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.(!empty($_GET['refresh']) ? '&refresh' : '').'\'">#max</button>';
+        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.(!empty($_GET['refresh']) ? '&refresh' : '').$deviceParam.'\'">#max</button>';
     }
-    echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
+    echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].$deviceParam.'\'">Reset</button>';
     if ($power_details_resolution && empty($_GET['3p'])) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
@@ -704,6 +933,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
     }
     echo '</body></html>';
+    } // end per-device/single-device daily chart else block
 } elseif (isset($_GET['m']) && $_GET['m']) {
     if (isset($_GET['feed'])) {
         $index = 6;
@@ -715,7 +945,24 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $feed_measured = false;
     }
     $month = htmlentities(trim($_GET['m']));
-    list($chart_stats) = pm_scan_chart_stats();
+    // For gesamt in multi-device mode, merge chart_stats from all devices
+    if ($isMultiDevice && $isGesamtMode) {
+        $chart_stats = [];
+        foreach ($groupDeviceMeta as $devId => $_) {
+            list($devStats) = pm_scan_chart_stats($devId);
+            foreach ($devStats as $date => $data) {
+                if (!isset($chart_stats[$date])) {
+                    $chart_stats[$date] = [0 => $date, 1 => 0, 6 => null];
+                }
+                $chart_stats[$date][1] += floatval($data[1]);
+                if (isset($data[6])) {
+                    $chart_stats[$date][6] = ($chart_stats[$date][6] ?? 0) + floatval($data[6]);
+                }
+            }
+        }
+    } else {
+        list($chart_stats) = pm_scan_chart_stats($deviceSubdir);
+    }
 
     for ($i = 1; $i <= 31; $i++) {
         if ($i > 28 && substr($month, -2) == '02') {
@@ -762,15 +1009,15 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         die();
     }
-    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y * 8 / 100) * 100;
     $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '').$deviceParam;
     echo '<title>'.$month.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').$deviceParam.'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').$deviceParam.'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download'.$deviceParam.'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -784,8 +1031,13 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    if ($isMultiDevice) {
+        $tabQuery = 'm=' . htmlspecialchars($month) . '&fix=' . $fix_axis_y . (isset($_GET['feed']) ? '&feed' : '');
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
+    var deviceParam = " . json_encode($deviceParam) . ";
     var ctx = document.getElementById('myChart');
     var myChart = new Chart(ctx, {
         type: 'bar',
@@ -805,7 +1057,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
                 legend: { display: false },
                 tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' {$unit1}h'; } } }
             },
-            scales: { 
+            scales: {
                 y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
@@ -817,7 +1069,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            location.href = 'chart.php?file=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index];
+            location.href = 'chart.php?file=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + deviceParam;
         }
     }
     ctx.onmousemove = function(evt) {
@@ -833,7 +1085,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$month.'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$month.'" />'.($isMultiDevice ? '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />' : '').$unit1_label.' ('.($isGesamtMode ? htmlspecialchars($activeGroup['label']) : 'gesamt').'): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_month) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_month).' '.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' '.$unit1.'h';
@@ -850,7 +1102,24 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $feed_measured = false;
     }
     $year = htmlentities(trim($_GET['y']));
-    list($chart_stats) = pm_scan_chart_stats();
+    // For gesamt in multi-device mode, merge chart_stats from all devices
+    if ($isMultiDevice && $isGesamtMode) {
+        $chart_stats = [];
+        foreach ($groupDeviceMeta as $devId => $_) {
+            list($devStats) = pm_scan_chart_stats($devId);
+            foreach ($devStats as $date => $data) {
+                if (!isset($chart_stats[$date])) {
+                    $chart_stats[$date] = [0 => $date, 1 => 0, 6 => null];
+                }
+                $chart_stats[$date][1] += floatval($data[1]);
+                if (isset($data[6])) {
+                    $chart_stats[$date][6] = ($chart_stats[$date][6] ?? 0) + floatval($data[6]);
+                }
+            }
+        }
+    } else {
+        list($chart_stats) = pm_scan_chart_stats($deviceSubdir);
+    }
 
     for ($i = 1; $i <= 12; $i++) {
         $chart_stats_this_year[$year.'-'.($i < 10 ? '0'.$i : $i)] = null;
@@ -894,15 +1163,15 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         die();
     }
-    $get_fix = isset($_GET['fix']) ? trim($_GET['fix']) : '';
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y / 50) * 10;
     $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '').$deviceParam;
     echo '<title>'.$year.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').$deviceParam.'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download'.$deviceParam.'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
         echo '<a id="prev" href="?y='.$chart_stats_years[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -916,7 +1185,11 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
-    $feed = isset($_GET['feed']) ? '&feed' : '';
+    if ($isMultiDevice) {
+        $tabQuery = 'y=' . htmlspecialchars($year) . '&fix=' . $fix_axis_y . (isset($_GET['feed']) ? '&feed' : '');
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
+    $feed = isset($_GET['feed']) ? '&feed' : ''; // used in JS string
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
     var ctx = document.getElementById('myChart');
@@ -950,7 +1223,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + '$feed';
+            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + '$feed' + " . json_encode($deviceParam) . ";
         }
     }
     ctx.onmousemove = function(evt) {
@@ -966,14 +1239,14 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$year.'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$year.'" />'.($isMultiDevice ? '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />' : '').$unit1_label.' ('.($isGesamtMode ? htmlspecialchars($activeGroup['label']) : 'gesamt').'): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_year) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' k'.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' k'.$unit1.'h';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> k'.$unit1.'h (0 = dynamisch)';
 } else {
-    header("Location: overview.php");
+    header("Location: overview.php" . ($isMultiDevice ? '?device=' . urlencode($activeDevice) : ''));
 }
 
 //EOF

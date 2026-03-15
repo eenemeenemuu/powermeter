@@ -1,6 +1,6 @@
 <?php
 // basic configuration - mandatory
-$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly_gen2, shelly, envtec, ahoydtu, esp-epever-controller
+$device = 'tasmota'; // possible options: fritzbox, tasmota, shelly3em, shelly_gen2, shelly, envtec, ahoydtu, esp-epever-controller, anker_solix
 $host = 'tasmotaplug4'; // host name or ip address of measuring device (not needed for envtec)
 $refresh_rate = 2; // refresh rate of index.php in seconds
 
@@ -35,6 +35,14 @@ $station_id = ''; // station ID
 // additional configuration for AhoyDTU
 $inverter_id = 0; // if multiple inverters are configured in DTU, set to desired inverter ID
 
+// additional configuration for Anker Solix E1600
+// uses cloud API for real-time data (output power, battery SOC, PV power, charge power)
+// recommended: $unit1_label='Einspeisung', $unit2='%', $unit2_label='Akku', $unit2_display=true, $unit3='W', $unit3_label='Solar', $unit4='W', $unit4_label='Laden'
+$anker_email = ''; // Anker account email address
+$anker_password = ''; // Anker account password
+$anker_country = 'DE'; // country code (e.g. DE, AT, CH, FR, etc.)
+$anker_site_id = ''; // site ID (leave empty to use first site); find in Anker app or via API
+
 // logging configuration
 $log_file_dir = 'data/'; // log file directory (cronjob on log.php must be set to enable logging)
 $log_rate = 6; // how often should data be gathered per minute
@@ -64,5 +72,33 @@ $color6 = ''; // color for unit3 (see above)
 $color7 = ''; // color for unit4 (see above)
 $color8 = ''; // color for unit5 (see above)
 $color9 = ''; // color for unit6 (see above)
+
+// configurable gesamt groups (multi-device only): define which devices are combined in each "Gesamt" view
+// if empty or not set, one default group "gesamt" with all devices is created automatically
+// each group gets its own tab in chart.php and overview.php
+$gesamt_groups = [];
+// $gesamt_groups = [
+//     ['id' => 'gesamt', 'label' => 'Gesamt', 'devices' => ['anker', 'ahoy1']],
+//     ['id' => 'solargesamt', 'label' => 'Solar Gesamt', 'devices' => ['anker', 'ahoy0', 'ahoy1']],
+// ];
+
+// virtual totals (multi-device only): computed values displayed below "Gesamt" on index.php
+// formula syntax: {device_id}.{field} [+-] {device_id}.{field} ...
+// fields: power (stats index 2), unit2 (3), unit3 (4), unit4 (5), unit5 (6), unit6 (7)
+$virtual_totals = [];
+// $virtual_totals = [
+//     ['label' => 'Laden', 'unit' => 'W', 'formula' => 'anker.unit4 + ahoy0.power + ahoy1.power'],
+// ];
+
+// data backend configuration
+$data_backend = 'csv'; // possible options: csv, sqlite (sqlite requires Phase 2 migration)
+
+// multi-device configuration (optional)
+// when set, $device and $host above are used as defaults; each entry can override any device-specific setting
+// each device logs to its own subdirectory: data/{id}/
+// $devices = [
+//     ['id' => 'solar', 'device' => 'anker_solix', 'anker_email' => 'user@example.com', 'anker_password' => 'secret'],
+//     ['id' => 'grid',  'device' => 'shelly3em',   'host' => '192.168.1.100'],
+// ];
 
 //EOF

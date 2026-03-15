@@ -1,12 +1,10 @@
 <?php
 
-// Load new src/ classes for API and future use
-require_once __DIR__ . '/src/Config.php';
-require_once __DIR__ . '/src/Helpers.php';
-require_once __DIR__ . '/src/DeviceDriver.php';
-require_once __DIR__ . '/src/DataStoreInterface.php';
-require_once __DIR__ . '/src/CsvDataStore.php';
-require_once __DIR__ . '/src/StatsCalculator.php';
+if (defined('PM_FUNCTIONS_LOADED')) return;
+define('PM_FUNCTIONS_LOADED', true);
+
+// Load autoloader for all src/ classes
+require_once __DIR__ . '/src/autoload.php';
 
 if (!$unit1) {
     $unit1 = 'W';
@@ -85,269 +83,44 @@ if (!isset($inverter_id) || !$inverter_id) {
     // backward compatibility
     $inverter_id = 0;
 }
-if (!$anker_email) {
+if (!isset($anker_email) || !$anker_email) {
     $anker_email = '';
 }
-if (!$anker_password) {
+if (!isset($anker_password) || !$anker_password) {
     $anker_password = '';
 }
-if (!$anker_country) {
+if (!isset($anker_country) || !$anker_country) {
     $anker_country = 'DE';
 }
-if (!$anker_site_id) {
+if (!isset($anker_site_id) || !$anker_site_id) {
     $anker_site_id = '';
 }
 
-function GetSessionId ($user, $pass) {
-    global $host;
-    $text = file_get_contents('http://'.$host.'/login_sid.lua');
-    preg_match('/<SID>(.*)<\/SID>/', $text, $match);
-    $sid = $match[1];
-    if ($sid == "0000000000000000") {
-        preg_match('/<Challenge>(.*)<\/Challenge>/', $text, $match);
-        $challenge = $match[1];
-        $text = file_get_contents('http://'.$host.'/login_sid.lua?username='.$user.'&response='.$challenge."-".md5(mb_convert_encoding($challenge."-".$pass, 'UTF-16LE', 'UTF-8')));
-        //print_r($text);
-        preg_match('/<SID>(.*)<\/SID>/', $text, $match);
-        $sid = $match[1];
-    }
-    return $sid; 
-}
-
 function GetStats() {
-    global $device, $host;
-    if ($device == 'fritzbox') {
-        if (!function_exists('mb_convert_encoding')) {
-            return ['error', 'PHP function "mb_convert_encoding" does not exist! Try <code>sudo apt update && sudo apt install -y php-mbstring</code> to install.'];
-        }
-        global $user, $pass, $ain;
-        $time = time();
-        $stats = file_get_contents('http://'.$host.'/webservices/homeautoswitch.lua?ain='.$ain.'&switchcmd=getbasicdevicestats&sid='.GetSessionId($user, $pass));
-        $stats_array = [];
-        if ($stats) {
-            $stats_array['date'] = date("d.m.Y", $time);
-            $stats_array['time'] = date("H:i:s", $time);
+    global $device, $host, $user, $pass, $ain, $station_id, $inverter_id,
+           $anker_email, $anker_password, $anker_country, $anker_site_id,
+           $log_file_dir, $rounding_precision, $power_threshold;
 
-            if (!preg_match('/<voltage><stats count="[0-9]+" grid="[0-9]+"(?: datatime="[0-9]+")?>([0-9]+),/', $stats)) {
-                return (array('error', 'FRITZ!DECT seems to be offline, please check.'));
-            }
-/*
-            if (preg_match('/<power><stats count="[0-9]+" grid="[0-9]+" datatime="([0-9]+)">[0-9]+,/', $stats, $match)) {
-                $stats_array['date'] = date("d.m.Y", $match[1]);
-                $stats_array['time'] = date("H:i:s", $match[1]);
-            }
-*/
-            preg_match('/<power><stats count="[0-9]+" grid="[0-9]+"(?: datatime="[0-9]+")?>([0-9]+),/', $stats, $match);
-            $power = $match[1];
-            $stats_array['power'] = pm_round($power/100, true, 2);
+    $dc = new DriverConfig();
+    $dc->host = $host ?: '';
+    $dc->user = $user ?: '';
+    $dc->pass = $pass ?: '';
+    $dc->ain = $ain ?: '';
+    $dc->station_id = $station_id ?: '';
+    $dc->inverter_id = (int) ($inverter_id ?: 0);
+    $dc->anker_email = $anker_email ?: '';
+    $dc->anker_password = $anker_password ?: '';
+    $dc->anker_country = $anker_country ?: 'DE';
+    $dc->anker_site_id = $anker_site_id ?: '';
+    $dc->log_file_dir = $log_file_dir ?: 'data/';
+    $dc->rounding_precision = (int) ($rounding_precision ?: 0);
+    $dc->power_threshold = (float) ($power_threshold ?: 0);
 
-            preg_match('/<temperature><stats count="[0-9]+" grid="[0-9]+"(?: datatime="[0-9]+")?>([\-0-9]+),/', $stats, $match);
-            $temp = $match[1];
-            $stats_array['temp'] = pm_round($temp/10, true, 1);
-
-            return $stats_array;
-        } else {
-            return (array('error', 'Unable to get stats. Please check host, username, password and ain configuration. Go to <a href="overview.php">stats history</a>.'));
-        }
-    } elseif ($device == 'tasmota') {
-        $obj = json_decode(file_get_contents('http://'.$host.'/cm?cmnd=Status%208'));
-        if (is_int($obj->StatusSNS->ENERGY->Power)) {
-            $time = strtotime($obj->StatusSNS->Time);
-            if ($time < 500000000) {
-                $time = time();
-            }
-            $stats_array['date'] = date("d.m.Y", $time);
-            $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($obj->StatusSNS->ENERGY->Voltage*$obj->StatusSNS->ENERGY->Current*$obj->StatusSNS->ENERGY->Factor, true, 3);
-
-            return $stats_array;
-        } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-    } elseif ($device == 'shelly3em') {
-        $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
-        if ($data) {
-            $time = $data['unixtime'];
-            if ($time < 500000000) {
-                $time = time();
-            }
-            $stats_array['date'] = date("d.m.Y", $time);
-            $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($data['total_power'], true, 2);
-            $stats_array['temp'] = '';
-            foreach ($data['emeters'] as $emeter) {
-                $stats_array['emeters'][] = $emeter['power'];
-            }
-            return $stats_array;
-        } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-    } elseif ($device == 'shelly_gen2') {
-        $data = json_decode(file_get_contents('http://'.$host.'/rpc/Shelly.GetStatus'), true);
-
-        if (!$data) {
-            return (array('error', 'Unable to query Shelly device. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        $power = $data['switch:0']['apower'];
-        $time = $data['sys']['unixtime'];
-
-        if (!isset($time)) {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        if ($time < 500000000) {
-            $time = time();
-        }
-
-        $stats_array['date'] = date('d.m.Y', $time);
-        $stats_array['time'] = date('H:i:s', $time);
-        $stats_array['power'] = pm_round($power, true, 2);
-        if (isset($data['switch:0']['temperature']['tC'])) {
-            $stats_array['temp'] = pm_round($data['switch:0']['temperature']['tC'], true, 2);
-        }
-
-        return $stats_array;
-    } elseif ($device == 'shelly') {
-        $data = json_decode(file_get_contents('http://'.$host.'/status'), true);
-
-        if (!$data) {
-            return (array('error', 'Unable to query Shelly device. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        $power = 0;
-        foreach ($data['meters'] as $meter) {
-            if ($meter['is_valid']){
-                $power += $meter['power'];
-                $time = $meter['timestamp'];
-            }
-        }
-
-        if (!isset($time)) {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        if ($time < 500000000) {
-            $time = time();
-        }
-
-        $stats_array['date'] = DateTime::createFromFormat('U', $time)->format("d.m.Y");
-        $stats_array['time'] = DateTime::createFromFormat('U', $time)->format("H:i:s");
-        $stats_array['power'] = pm_round($power, true, 2);
-        if (isset($data['temperature'])) {
-            $stats_array['temp'] = pm_round($data['temperature'], true, 2);
-        }
-
-        return $stats_array;
-    } elseif ($device == 'envtec') {
-        global $station_id;
-
-        $opts = ['http' => ['method'  => 'POST', 'header'  => "Content-Type: application/x-www-form-urlencoded\r\nContent-Length: 0\r\n" ]];
-        $context = stream_context_create($opts);
-        $url = "https://www.envertecportal.com/ApiInverters/QueryTerminalReal?page=1&perPage=20&orderBy=GATEWAYSN&whereCondition=%7B%22STATIONID%22%3A%22{$station_id}%22%7D";
-        $result = file_get_contents($url, false, $context);
-
-        if (!$result) {
-            return (array('error', 'Unable to query envertecportal.com. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        $data = json_decode($result, true);
-
-        if (!$data['Data']['QueryResults']) {
-            return (array('error', 'Unable to get stats. Please check station ID configuration. Go to <a href="overview.php">stats history</a>.'));
-        }
-
-        foreach ($data['Data']['QueryResults'] as $result) {
-            $data_timestamps[] = $result['SITETIME'];
-        }
-        $stats_timestamp = max($data_timestamps);
-
-        $skipped = 0;
-        foreach ($data['Data']['QueryResults'] as $result) {
-            if (!$result['SITETIME']) {
-                continue;
-            }
-            if ($result['SITETIME'] != $stats_timestamp) {
-                // skip outdated (missing) data
-                $skipped++;
-            } else {
-                $stats_power[] = $result['POWER'];
-                $stats_temp[] = $result['TEMPERATURE'];
-            }
-        }
-
-        $timeZone = new DateTimeZone('Europe/Helsinki');
-        $dateTime = DateTime::createFromFormat('m/d/Y h:i:s A', $stats_timestamp, $timeZone);
-        $stats_array['date'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("d.m.Y");
-        $stats_array['time'] = $dateTime->setTimezone((new DateTimeZone('Europe/Berlin')))->format("H:i:s");
-        $stats_array['power'] = array_sum($stats_power);
-        $stats_array['temp'] = pm_round(array_sum($stats_temp)/count($stats_temp), true, 1);
-
-        if ($skipped) {
-            // assume power of the skipped modules are identical
-            $i = count($data['Data']['QueryResults']);
-            $stats_array['power'] = $stats_array['power'] / $i * ($i + $skipped);
-        }
-        $stats_array['power'] = pm_round($stats_array['power'], true, 2);
-
-        return $stats_array;
-    } elseif ($device == 'ahoydtu') {
-        global $inverter_id;
-        $data = json_decode(file_get_contents('http://'.$host.'/api/inverter/id/'.$inverter_id));
-        if ($data->ts_last_success) {
-            $time = $data->ts_last_success;
-            $stats_array['date'] = date("d.m.Y", $time);
-            $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($data->ch[0][2], true, 1);
-            $stats_array['temp'] = pm_round($data->ch[0][5], true, 1);
-            if (array_key_exists(2, $data->ch)) {
-                $stats_array['emeters'][] = pm_round($data->ch[1][2], true, 1); // MPPT 1 power
-                $stats_array['emeters'][] = pm_round($data->ch[2][2], true, 1); // MPPT 2 power
-                if (array_key_exists(4, $data->ch)) {
-                    $stats_array['emeters'][] = pm_round($data->ch[3][2], true, 1); // MPPT 3 power
-                    $stats_array['emeters'][] = pm_round($data->ch[4][2], true, 1); // MPPT 4 power
-                }
-            } else {
-                $stats_array['emeters'][] = pm_round($data->ch[1][0], true, 1); // voltage
-                $stats_array['emeters'][] = pm_round($data->ch[1][1], true, 2); // current
-            }
-
-            return $stats_array;
-        } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-    } elseif ($device == 'esp-epever-controller') {
-        $time = time();
-        $data = json_decode(file_get_contents('http://'.$host.'/AllJsonData', false, stream_context_create(['http'=>['timeout' => 1]])));
-        if ($data->BatteryV) {
-            $stats_array['date'] = date("d.m.Y", $time);
-            $stats_array['time'] = date("H:i:s", $time);
-            $stats_array['power'] = pm_round($data->PanelP, true, 2);
-            $stats_array['temp'] = pm_round($data->BatteryV, true, 2);
-            $stats_array['emeters'][] = pm_round($data->BatteryI, true, 2);
-            $stats_array['emeters'][] = pm_round($data->PanelV, true, 2);
-            $stats_array['emeters'][] = pm_round($data->PanelI, true, 2);
-
-            return $stats_array;
-        } else {
-            return (array('error', 'Unable to get stats. Please check host configuration and if the device is powered. Go to <a href="overview.php">stats history</a>.'));
-        }
-    } elseif ($device == 'anker_solix') {
-        // Delegate to DeviceDriver class (requires PHP openssl extension)
-        global $anker_email, $anker_password, $anker_country, $anker_site_id, $log_file_dir, $rounding_precision, $power_threshold;
-        $config = Config::getInstance();
-        $config->device = $device;
-        $config->anker_email = $anker_email;
-        $config->anker_password = $anker_password;
-        $config->anker_country = $anker_country;
-        $config->anker_site_id = $anker_site_id;
-        $config->log_file_dir = $log_file_dir;
-        $config->rounding_precision = $rounding_precision;
-        $config->power_threshold = $power_threshold;
-        $driver = new DeviceDriver($config);
+    try {
+        $driver = DriverFactory::create($device, $dc);
         return $driver->getStats();
-    } else {
-        return (array('error', 'Invalid device configured.'));
+    } catch (RuntimeException $e) {
+        return ['error', $e->getMessage()];
     }
 }
 
@@ -371,17 +144,18 @@ function pm_round($value, $number_format = false, $max_precision_level = 9) {
     }
 }
 
-function pm_scan_log_file_dir() {
+function pm_scan_log_file_dir($subdir = null) {
     global $log_file_dir;
+    $dir = $subdir ? $log_file_dir . $subdir . '/' : $log_file_dir;
     $i = 0;
     $pos = false;
     $files = [];
     $file_dates = [];
-    if (!is_dir($log_file_dir)) {
+    if (!is_dir($dir)) {
         return [$files, $pos, $file_dates];
     }
-    foreach (scandir($log_file_dir, SCANDIR_SORT_DESCENDING) as $file) {
-        if ($file == '.' || $file == '..' || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt' || $file == 'power_array' || $file == 'anker_token.json' || $file == 'anker_mqtt_cache.json' || substr($file, 0, 5) == 'mqtt_') {
+    foreach (scandir($dir, SCANDIR_SORT_DESCENDING) as $file) {
+        if ($file == '.' || $file == '..' || is_dir($dir . $file) || $file == 'stats.txt' || $file == 'chart_stats.csv' || substr($file, 0, 14) == 'chart_details_' || $file == 'buffer.txt' || $file == 'power_array' || $file == 'anker_token.json' || $file == 'anker_mqtt_cache.json' || substr($file, 0, 5) == 'mqtt_') {
             continue;
         }
         if (isset($_GET['file']) && ($file == $_GET['file'] || $file == $_GET['file'].'.csv' || $file == $_GET['file'].'.csv.gz' || $file == $_GET['file'].'.gz')) {
@@ -397,12 +171,13 @@ function pm_scan_log_file_dir() {
     return [$files, $pos, $file_dates];
 }
 
-function pm_scan_chart_stats() {
+function pm_scan_chart_stats($subdir = null) {
     global $log_file_dir, $file_dates;
     $chart_stats = [];
     $chart_stats_month = [];
     $chart_stats_month_feed = [];
-    $stats_file = $log_file_dir.'chart_stats.csv';
+    $dir = $subdir ? $log_file_dir . $subdir . '/' : $log_file_dir;
+    $stats_file = $dir.'chart_stats.csv';
     if (!file_exists($stats_file)) {
         return [$chart_stats, $chart_stats_month, $chart_stats_month_feed];
     }
@@ -420,7 +195,7 @@ function pm_scan_chart_stats() {
     return [$chart_stats, $chart_stats_month, $chart_stats_month_feed];
 }
 
-function pm_print_monthly_overview($header, $data, $feed = false) {
+function pm_print_monthly_overview($header, $data, $feed = false, $deviceParam = '') {
     global $unit1;
     $feed = $feed ? '&feed' : '';
     echo '<table border="1"><tr><td colspan="14" align="center">'.$header.' pro Monat in k'.$unit1.'h</td></tr><tr><th></th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>10</th><th>11</th><th>12</th><th>∑</th>';
@@ -433,9 +208,9 @@ function pm_print_monthly_overview($header, $data, $feed = false) {
             $year_sum += $value;
         }
         foreach ($month_array as $key => $value) {
-            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.$feed.'">'.number_format($value/1000, 2, '.', '').'</a>' : '-').'</td>';
+            echo '<td>'.($value ? '<a href="chart.php?m='.$year.'-'.$key.$feed.$deviceParam.'">'.number_format($value/1000, 2, '.', '').'</a>' : '-').'</td>';
         }
-        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.$feed.'">'.number_format($year_sum/1000, 2, '.', '') : '-').'</a></td>';
+        echo '<td>'.($year_sum ? '<a href="chart.php?y='.$year.$feed.$deviceParam.'">'.number_format($year_sum/1000, 2, '.', '') : '-').'</a></td>';
         echo '</tr>';
     }
     echo '</table><br />';
@@ -457,6 +232,87 @@ function pm_calculate_power_details($power_details_wh) {
         $power_details_wh3[$key] = $power_details_wh3_sum;
     }
     return [$power_details_wh2, $power_details_wh3];
+}
+
+function pm_get_device_meta() {
+    global $unit1, $unit1_label, $unit1_label_in, $unit1_label_out,
+           $unit2, $unit2_label, $unit3, $unit3_label, $unit4, $unit4_label,
+           $unit5, $unit5_label, $unit6, $unit6_label;
+    $config = Config::getInstance();
+    if (!$config->isMultiDevice()) {
+        return [];
+    }
+    $deviceMeta = [];
+    foreach ($config->devices as $i => $entry) {
+        $id = $entry['id'] ?? 'device_' . $i;
+        $deviceMeta[$id] = [
+            'label'          => $entry['label'] ?? ucfirst($id),
+            'unit1'          => $entry['unit1'] ?? $unit1,
+            'unit1_label'    => $entry['unit1_label'] ?? $unit1_label,
+            'unit1_label_in' => $entry['unit1_label_in'] ?? $unit1_label_in,
+            'unit1_label_out'=> $entry['unit1_label_out'] ?? $unit1_label_out,
+            'unit2'          => $entry['unit2'] ?? $unit2,
+            'unit2_label'    => $entry['unit2_label'] ?? $unit2_label,
+            'unit2_display'  => $entry['unit2_display'] ?? $entry['display_temp'] ?? false,
+            'unit3'          => $entry['unit3'] ?? $unit3,
+            'unit3_label'    => $entry['unit3_label'] ?? $unit3_label,
+            'unit4'          => $entry['unit4'] ?? $unit4,
+            'unit4_label'    => $entry['unit4_label'] ?? $unit4_label,
+            'unit5'          => $entry['unit5'] ?? $unit5,
+            'unit5_label'    => $entry['unit5_label'] ?? $unit5_label,
+            'unit6'          => $entry['unit6'] ?? $unit6,
+            'unit6_label'    => $entry['unit6_label'] ?? $unit6_label,
+            'color1'         => $entry['color1'] ?? null,
+        ];
+    }
+    return $deviceMeta;
+}
+
+function pm_evaluate_formula($formula, $allStats) {
+    $fieldMap = ['power' => 2, 'unit2' => 3, 'unit3' => 4, 'unit4' => 5, 'unit5' => 6, 'unit6' => 7];
+
+    // Split on + and - while preserving operators
+    $tokens = preg_split('/\s*([+\-])\s*/', trim($formula), -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+    $result = 0;
+    $op = '+';
+    foreach ($tokens as $token) {
+        $token = trim($token);
+        if ($token === '+' || $token === '-') {
+            $op = $token;
+            continue;
+        }
+        // Parse device.field
+        $parts = explode('.', $token, 2);
+        if (count($parts) !== 2) continue;
+        list($deviceId, $field) = $parts;
+        $index = isset($fieldMap[$field]) ? $fieldMap[$field] : null;
+        if ($index === null) continue;
+        $value = isset($allStats[$deviceId][$index]) ? floatval($allStats[$deviceId][$index]) : 0;
+        if ($op === '+') {
+            $result += $value;
+        } else {
+            $result -= $value;
+        }
+    }
+    return $result;
+}
+
+function pm_render_device_tabs($activeDevice, $deviceMeta, $queryParams = '') {
+    $config = Config::getInstance();
+    $tabs = '<div style="text-align: center; margin: 8px 0;">';
+    // Gesamt group tabs
+    foreach ($config->getGesamtGroups() as $group) {
+        $style = $activeDevice === $group['id'] ? 'font-weight: bold; text-decoration: underline;' : '';
+        $tabs .= '<a href="?' . $queryParams . '&device=' . htmlspecialchars($group['id']) . '" style="margin: 0 8px; ' . $style . '">' . htmlspecialchars($group['label']) . '</a>';
+    }
+    // Per-device tabs
+    foreach ($deviceMeta as $id => $meta) {
+        $style = $activeDevice === $id ? 'font-weight: bold; text-decoration: underline;' : '';
+        $tabs .= '<a href="?' . $queryParams . '&device=' . htmlspecialchars($id) . '" style="margin: 0 8px; ' . $style . '">' . htmlspecialchars($meta['label']) . '</a>';
+    }
+    $tabs .= '</div>';
+    echo $tabs;
 }
 
 //EOF
