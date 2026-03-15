@@ -3,22 +3,95 @@
 require('config.inc.php');
 require('functions.inc.php');
 
-if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
-    list($files, $pos) = pm_scan_log_file_dir();
+// Multi-device resolution
+$config = Config::load(file_exists('config.inc.php') ? 'config.inc.php' : null);
+$isMultiDevice = $config->isMultiDevice();
+$deviceMeta = pm_get_device_meta();
+$activeDevice = null;
+$deviceSubdir = null;
+$deviceParam = '';
+$isGesamtMode = false;
+$activeGroup = null;
+$groupDeviceMeta = [];
+
+if ($isMultiDevice) {
+    $gesamtGroups = $config->getGesamtGroups();
+    $defaultGroupId = $gesamtGroups[0]['id'] ?? 'gesamt';
+    $activeDevice = $_GET['device'] ?? $defaultGroupId;
+    // Validate device parameter against known device IDs and group IDs
+    if (!$config->isGesamtGroup($activeDevice) && !isset($deviceMeta[$activeDevice])) {
+        $activeDevice = $defaultGroupId;
+    }
+    $deviceParam = '&device=' . htmlspecialchars($activeDevice);
+    $activeGroup = $config->getGesamtGroup($activeDevice);
+    $isGesamtMode = $activeGroup !== null;
+
+    if (!$isGesamtMode && isset($deviceMeta[$activeDevice])) {
+        // Override global units/labels with device-specific values
+        $meta = $deviceMeta[$activeDevice];
+        $unit1 = $meta['unit1'];
+        $unit1_label = $meta['unit1_label'];
+        $unit1_label_in = $meta['unit1_label_in'];
+        $unit1_label_out = $meta['unit1_label_out'];
+        $unit2 = $meta['unit2'];
+        $unit2_label = $meta['unit2_label'];
+        $unit2_display = $meta['unit2_display'];
+        $deviceSubdir = $activeDevice;
+    }
+    // Filter deviceMeta to only devices in active group
+    if ($isGesamtMode) {
+        $groupDeviceIds = $activeGroup['devices'];
+        $groupDeviceMeta = array_intersect_key($deviceMeta, array_flip($groupDeviceIds));
+    }
+}
+
+if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset($_GET['pos'])) {
+    // For gesamt mode, scan all device subdirectories and merge dates
+    if ($isMultiDevice && $isGesamtMode) {
+        $allDates = [];
+        foreach ($groupDeviceMeta as $id => $meta) {
+            list($devFiles) = pm_scan_log_file_dir($id);
+            foreach ($devFiles as $f) {
+                $allDates[$f['date']] = true;
+            }
+        }
+        krsort($allDates);
+        $files = [];
+        $pos = false;
+        $i = 0;
+        foreach ($allDates as $date => $_) {
+            if (isset($_GET['file']) && $_GET['file'] == $date) {
+                $pos = $i;
+            }
+            $files[] = ['date' => $date, 'name' => $date . '.csv'];
+            $i++;
+        }
+    } else {
+        list($files, $pos) = pm_scan_log_file_dir($deviceSubdir);
+    }
+
+    if (empty($files)) {
+        die('Noch keine Daten vorhanden.');
+    }
 
     if (isset($_GET['today'])) {
-        header("Location: chart.php?file={$files[0]['date']}");
+        header("Location: chart.php?file={$files[0]['date']}{$deviceParam}");
+        exit;
     }
 
     if (isset($_GET['yesterday'])) {
-        header("Location: chart.php?file={$files[1]['date']}");
+        if (!isset($files[1])) {
+            die('Noch nicht genug Daten vorhanden.');
+        }
+        header("Location: chart.php?file={$files[1]['date']}{$deviceParam}");
+        exit;
     }
 
     if ($pos === false) {
         if (isset($_GET['pos']) && isset($files[$_GET['pos']])) {
             $pos = (int)$_GET['pos'];
         } else {
-            $file = $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
+            $file = isset($_GET['file']) && $_GET['file'] ? ': '.htmlentities($_GET['file']) : '.';
             die('Error! File not found'.$file);
         }
     }
@@ -36,7 +109,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         if ($value_abs['p'] && $value_abs['p'] > $power_stats['peak']['p']) {
             $power_stats['peak'] = $value_abs;
         }
-        if ($unit2 == '%') {
+        if ($unit2 == '%' && isset($value['t'])) {
             $power_stats['percent_min'] = min($power_stats['percent_min'], $value['t']);
             $power_stats['percent_max'] = max($power_stats['percent_max'], $value['t']);
         }
@@ -62,13 +135,14 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $power_stats['last_timestamp'] = mktime($value['h'], $value['m'], $value['s']);
     }
     function compress_file($file, $data) {
-        global $log_file_dir;
+        global $log_file_dir, $deviceSubdir;
+        $dir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
         if (function_exists('gzencode')) {
             $data = implode("\n", $data);
             $gzdata = gzencode($data, 7);
             if ($gzdata) {
-                if (file_put_contents($log_file_dir.$file.'.gz', $gzdata)) {
-                    if (unlink($log_file_dir.$file)) {
+                if (file_put_contents($dir.$file.'.gz', $gzdata)) {
+                    if (unlink($dir.$file)) {
                         return $file.'.gz';
                     }
                 }
@@ -78,6 +152,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     }
     function get_y_min_max($min_max, $data) {
         $multiplier = 1;
+        $floor_ceil = false;
         while (!$floor_ceil) {
             foreach ([1, 2, 5] as $i) {
                 if (abs($data) < $i * $multiplier) {
@@ -95,9 +170,9 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         return false;
     }
-    $res = $_GET['res'] ? $_GET['res'] : $res;
-    $t1 = isset($_GET['t1']) ? $_GET['t1'] : 0;
-    $t2 = isset($_GET['t2']) ? $_GET['t2'] : 23;
+    $res = !empty($_GET['res']) ? (int)$_GET['res'] : $res;
+    $t1 = (int)($_GET['t1'] ?? 0);
+    $t2 = (int)($_GET['t2'] ?? 23);
     if ($t1 > $t2) {
         $t1 = $t2;
     }
@@ -106,17 +181,32 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $t1 = 0;
         $t2 = 23;
     }
-    $data = file_get_contents($log_file_dir.$files[$pos]['name']);
+
+    // Skip single-file reading for gesamt mode (handled later)
+    if ($isMultiDevice && $isGesamtMode) {
+        $date = $files[$pos]['date'];
+        $date_parts = explode('-', $date);
+        $date = $date_parts[2] . '.' . $date_parts[1] . '.' . $date_parts[0];
+        $wh = 0;
+        $wh_feed = 0;
+        $power_stats = ['first' => [], 'last' => [], 'peak' => ['p' => 0], 'wh' => 0, 'wh_feed' => 0, 'last_p' => 0, 'last_timestamp' => 0];
+        $feed_measured = false;
+        $extra_data = false;
+        goto gesamt_chart_render;
+    }
+
+    $dataDir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
+    $data = file_get_contents($dataDir.$files[$pos]['name']);
     $file_is_compressed = false;
     if (strpos($files[$pos]['name'], '.gz') !== false) {
         $file_is_compressed = true;
         $data = gzdecode($data);
-    } elseif ($files[$pos]['date'] == $files[$pos-1]['date']) {
-        $data2 = file_get_contents($log_file_dir.$files[$pos-1]['name']);
+    } elseif ($pos > 0 && $files[$pos]['date'] == $files[$pos-1]['date']) {
+        $data2 = file_get_contents($dataDir.$files[$pos-1]['name']);
         $data .= gzdecode($data2);
     }
     $data = trim($data);
-    if (isset($_GET['download'])) {
+    if (isset($_GET['download']) && !$isGesamtMode) {
         header('Content-type: text/csv');
         header('Content-Disposition: attachment; filename="'.$files[$pos]['date'].'.csv"');
         ob_clean();
@@ -133,7 +223,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     $dataPoints_wh_feed = array();
     $dataPoints_feed = array();
     $dataPoints_y_max = 0;
-    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0);
+    $power_stats = array('first' => array(), 'last' => array(), 'peak' => array('p' => 0), 'wh' => 0, 'wh_feed' => 0, 'last_p' => 0, 'last_timestamp' => 0);
     if ($unit2 == '%') {
         $power_stats['percent_min'] = PHP_INT_MAX;
         $power_stats['percent_max'] = PHP_INT_MIN;
@@ -149,7 +239,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         if (trim($line)) {
             $data_this = explode(",", $line);
             $time_parts = explode(":", $data_this[1]);
-            if ($_GET['3p']) {
+            if (!empty($_GET['3p'])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 'l1' => $data_this[4], 'l2' => $data_this[5], 'l3' => $data_this[6], 'l4' => $data_this[7]);
             } elseif ($unit2_display && isset($data_this[3])) {
                 $data[] = array('h' => $time_parts[0], 'm' => $time_parts[1], 's' => $time_parts[2], 'p' => $data_this[2], 't' => $data_this[3]);
@@ -161,7 +251,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         }
     }
-    if ($_GET['refresh'] && $pos === 0) {
+    if (!empty($_GET['refresh']) && $pos === 0) {
         $meta_refresh = '<meta http-equiv="refresh" content="'.($res == -1 && $refresh_rate < 60 ? $refresh_rate : 60).'" />';
         $data_last_h = intval($data[array_key_last($data)]['h']);
         if ($t2 < $data_last_h) {
@@ -171,7 +261,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     if ($res == -1) {
         foreach ($data as $value) {
             if ($value['h'] >= $t1 && $value['h'] <= $t2) {
-                if ($_GET['3p']) {
+                if (!empty($_GET['3p'])) {
                     $dataPoints_l1[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l1']));
                     $dataPoints_l2[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l2']));
                     $dataPoints_l3[] = array("x" => $value['h'].':'.$value['m'].':'.$value['s'], "y" => pm_round($value['l3']));
@@ -199,7 +289,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         }
         if (isset($_GET['max'])) {
-            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}".(isset($_GET['refresh']) ? '&refresh=on' : ''));
+            header("Location: chart.php?file={$files[$pos]['date']}&res=-1&fix=0&t1={$power_stats['first']['h']}&t2={$power_stats['last']['h']}".(isset($_GET['refresh']) ? '&refresh=on' : '').$deviceParam);
         }
     } else {
         if ($t1 === 0) {
@@ -218,7 +308,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                 $y_feed = 0;
                 foreach ($data as $value) {
                     if ($value['h'] == $h && ($value['m'] >= $m && $value['m'] < $m + $res)) {
-                        if ($_GET['3p']) {
+                        if (!empty($_GET['3p'])) {
                             $l1_res[] = $value['l1'];
                             $l2_res[] = $value['l2'];
                             $l3_res[] = $value['l3'];
@@ -237,7 +327,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                         }
                     }
                 }
-                if ($_GET['3p']) {
+                if (!empty($_GET['3p'])) {
                     $dataPoints_l1[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l1_res) ? pm_round(array_sum($l1_res) / count($l1_res)) : 0);
                     $dataPoints_l2[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l2_res) ? pm_round(array_sum($l2_res) / count($l2_res)) : 0);
                     $dataPoints_l3[] = array("x" => ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m), "y" => count($l3_res) ? pm_round(array_sum($l3_res) / count($l3_res)) : 0);
@@ -295,17 +385,18 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $power_details[$key] = gmdate("H:i:s", $value);
     }
     function save_stats($file, $data) {
-        global $log_file_dir, $files, $pos;
+        global $log_file_dir, $files, $pos, $deviceSubdir;
+        $dir = $deviceSubdir ? $log_file_dir . $deviceSubdir . '/' : $log_file_dir;
         $save = true;
-        if (file_exists($log_file_dir.$file)) {
-            foreach (explode("\n", file_get_contents($log_file_dir.$file)) as $line) {
+        if (file_exists($dir.$file)) {
+            foreach (explode("\n", file_get_contents($dir.$file)) as $line) {
                 $stat_parts = explode(',', $line);
                 if ($stat_parts[0] == $files[$pos]['date']) {
                     $line .= "\n";
                     if ($line != $data) {
-                        $contents = file_get_contents($log_file_dir.$file);
+                        $contents = file_get_contents($dir.$file);
                         $contents = str_replace($line, '', $contents);
-                        file_put_contents($log_file_dir.$file, $contents);
+                        file_put_contents($dir.$file, $contents);
                     } else {
                         $save = false;
                     }
@@ -314,10 +405,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         }
         if ($save) {
-            file_put_contents($log_file_dir.$file, $data, FILE_APPEND);
+            file_put_contents($dir.$file, $data, FILE_APPEND);
         }
     }
-    if ($pos > 0 && $t1 == 0 && $t2 == 23 && !$_GET['3p']) {
+    if ($pos > 0 && $t1 == 0 && $t2 == 23 && empty($_GET['3p'])) {
         $stats_str = "{$files[$pos]['date']},{$wh},{$power_stats['first']},{$power_stats['last']},{$power_stats['peak']['p']},{$power_stats['peak']['t']}";
         if ($power_stats['wh_feed']) {
             $stats_str .= ','.$wh_feed;
@@ -333,34 +424,46 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             $files[$pos]['name'] = compress_file($files[$pos]['name'], $lines);
         }
     }
-    $get_fix = trim($_GET['fix']);
+    gesamt_chart_render:
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     } elseif ($feed_measured) {
         $axisY_max = get_y_min_max('max', $dataPoints_y_max);
     }
+    // JS-safe unit strings for use in script blocks
+    $unit1_js = addslashes($unit1);
+    $unit2_js = addslashes($unit2);
+    $unit3_js = addslashes($unit3);
+    $unit4_js = addslashes($unit4);
+    $unit5_js = addslashes($unit5);
+    $unit6_js = addslashes($unit6);
     echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
     echo '<title>'.$date;
     if ($feed_measured) {
         echo ' ('.$unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h)';
-    } elseif (!$_GET['3p']) {
+    } elseif (empty($_GET['3p'])) {
         echo ' ('.$unit1_label.': '.$wh.' '.$unit1.'h)';
     }
-    echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.$meta_refresh;
-    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.($_GET['3p'] ? '&3p=on' : '');
+    echo '</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>'.($meta_refresh ?? '');
+    $params = '&res='.$res.'&fix='.$fix_axis_y.'&t1='.$t1.'&t2='.$t2.(!empty($_GET['3p']) ? '&3p=on' : '').$deviceParam;
     if (isset($_GET['file'])) {
-        $form_params = '<input type="hidden" name="file" value="'.$_GET['file'].'" />';
+        $form_params = '<input type="hidden" name="file" value="'.htmlspecialchars($_GET['file']).'" />';
     } else {
-        $form_params = '<input type="hidden" name="pos" value="'.$_GET['pos'].'" />';
+        $form_params = '<input type="hidden" name="pos" value="'.htmlspecialchars($_GET['pos'] ?? '').'" />';
+    }
+    if ($isMultiDevice) {
+        $form_params .= '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />';
     }
     for ($i = 1; $i <= 9; $i++) {
-        if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
-            $params .= '&c'.$i.'='.$_GET['c'.$i];
-            $form_params .= '<input type="hidden" name="c'.$i.'" value="'.$_GET['c'.$i].'" />';
+        if (isset($_GET['c'.$i]) && preg_match('/^[0-9a-fA-F]{6}$/', $_GET['c'.$i])) {
+            $params .= '&c'.$i.'='.htmlspecialchars($_GET['c'.$i]);
+            $form_params .= '<input type="hidden" name="c'.$i.'" value="'.htmlspecialchars($_GET['c'.$i]).'" />';
         }
     }
-    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).'" title="Zur Monatsansicht">📅</a></div><div style="float: right;"><a id="download" href="chart.php?file='.$files[$pos]['date'].'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).$deviceParam.'" title="Zur Monatsansicht">📅</a></div><div style="float: right;">'.(!$isGesamtMode ? '<a id="download" href="chart.php?file='.$files[$pos]['date'].'&download'.$deviceParam.'" title="Daten herunterladen">💾</a>' : '').'</div><div style="text-align: center;">';
     echo '';
     if ($pos < count($files)-1) {
         echo '<a id="prev" href="?file='.$files[$pos+1]['date'].$params.'" title="vorheriger Tag">⏪</a>';
@@ -374,6 +477,154 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    if ($isMultiDevice) {
+        $tabQuery = 'file=' . htmlspecialchars($files[$pos]['date']) . '&res=' . $res . '&fix=' . $fix_axis_y . '&t1=' . $t1 . '&t2=' . $t2;
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
+
+    // === Gesamt combined daily chart ===
+    if ($isMultiDevice && $isGesamtMode) {
+        $gesamtColors = ['109, 120, 173', '220, 80, 80', '80, 180, 80', '200, 150, 50', '150, 80, 200', '80, 200, 200'];
+        $gesamtDatasets = [];
+        $gesamtSumByTime = [];
+        $gesamtYMax = 0;
+        $colorIdx = 0;
+        $gesamtWh = [];
+
+        foreach ($groupDeviceMeta as $devId => $devMeta) {
+            $devDir = $log_file_dir . $devId . '/';
+            $devFile = $devDir . $files[$pos]['date'] . '.csv';
+            $devFileGz = $devDir . $files[$pos]['date'] . '.csv.gz';
+            $devData = '';
+            if (file_exists($devFile)) {
+                $devData = file_get_contents($devFile);
+            } elseif (file_exists($devFileGz)) {
+                $devData = gzdecode(file_get_contents($devFileGz));
+            }
+            if (!$devData) {
+                $colorIdx++;
+                continue;
+            }
+            $devLines = array_unique(explode("\n", trim($devData)));
+            sort($devLines);
+            $devPoints = [];
+            $devWh = 0;
+            $lastP = 0;
+            $lastTs = 0;
+            foreach ($devLines as $line) {
+                if (!trim($line)) continue;
+                $parts = explode(",", $line);
+                $tp = explode(":", $parts[1]);
+                $h = intval($tp[0]);
+                $m = intval($tp[1]);
+                $s = intval($tp[2] ?? 0);
+                if ($h < $t1 || $h > $t2) continue;
+                $p = floatval($parts[2]);
+                $ts = mktime($h, $m, $s);
+                if ($lastTs && ($ts - $lastTs) < 300) {
+                    $devWh += abs($lastP) * ($ts - $lastTs) / 3600;
+                }
+                $lastP = $p;
+                $lastTs = $ts;
+                $timeKey = ($h < 10 ? "0".$h : $h).":".($m < 10 ? "0".$m : $m);
+                if ($res > 0) {
+                    $timeKey = ($h < 10 ? "0".$h : $h).":".(floor($m / $res) * $res < 10 ? "0".(floor($m / $res) * $res) : floor($m / $res) * $res);
+                }
+                $devPoints[$timeKey][] = abs($p);
+            }
+            // Average per time slot
+            $devDataPoints = [];
+            foreach ($devPoints as $time => $values) {
+                $avg = array_sum($values) / count($values);
+                $devDataPoints[] = ['x' => $time, 'y' => pm_round($avg)];
+                $gesamtSumByTime[$time] = ($gesamtSumByTime[$time] ?? 0) + $avg;
+                if ($avg > $gesamtYMax) $gesamtYMax = $avg;
+            }
+            $color = $devMeta['color1'] ?? ($gesamtColors[$colorIdx % count($gesamtColors)]);
+            $gesamtDatasets[] = [
+                'label' => strip_tags($devMeta['label']),
+                'data' => $devDataPoints,
+                'color' => $color,
+            ];
+            $gesamtWh[$devId] = pm_round($devWh, true);
+            $colorIdx++;
+        }
+
+        // Sum dataset
+        $sumPoints = [];
+        ksort($gesamtSumByTime);
+        foreach ($gesamtSumByTime as $time => $sum) {
+            $sumPoints[] = ['x' => $time, 'y' => pm_round($sum)];
+            if ($sum > $gesamtYMax) $gesamtYMax = $sum;
+        }
+
+        $get_fix = trim($_GET['fix'] ?? '');
+        $fix_axis_y_g = is_numeric($get_fix) && $get_fix >= 0 ? (int)$get_fix : $fix_axis_y;
+        $axisY_max_g = $fix_axis_y_g ? " max: $fix_axis_y_g," : '';
+
+        // Build datasets JS
+        $dsJs = '';
+        foreach ($gesamtDatasets as $ds) {
+            if ($dsJs) $dsJs .= ',';
+            $dsJs .= "{
+                label: " . json_encode($ds['label']) . ",
+                yAxisID: 'y_p',
+                data: " . json_encode($ds['data'], JSON_NUMERIC_CHECK) . ",
+                fill: false,
+                borderWidth: 2,
+                borderColor: ['rgba(" . $ds['color'] . ", 1)'],
+                backgroundColor: ['rgba(" . $ds['color'] . ", 0.3)'],
+            }";
+        }
+        // Add Gesamt sum dataset
+        $dsJs .= ",{
+            label: " . json_encode($activeGroup['label']) . ",
+            yAxisID: 'y_p',
+            data: " . json_encode($sumPoints, JSON_NUMERIC_CHECK) . ",
+            fill: true,
+            borderWidth: 2,
+            borderColor: ['rgba(0, 0, 0, 0.6)'],
+            backgroundColor: ['rgba(0, 0, 0, 0.08)'],
+            borderDash: [5, 5],
+        }";
+
+        echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
+        <script>
+        var ctx = document.getElementById('myChart');
+        var myChart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [$dsJs] },
+            options: {
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' $unit1_js'; } } }
+                },
+                scales: {
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max_g ticks: { callback: function(value) { return value + ' $unit1_js'; } } },
+                },
+                elements: { point: { radius: 0, hitRadius: 10 } },
+                maintainAspectRatio: false,
+                animation: false,
+                normalized: true,
+            }
+        });
+        window.addEventListener('swap', function(event) {
+            if (event.detail.direction == 'left') { location.href = document.getElementById('next').href; }
+            if (event.detail.direction == 'right') { location.href = document.getElementById('prev').href; }
+            document.body.style.opacity = '0.3';
+        }, false);
+        </script>";
+
+        // Summary line
+        $whParts = [];
+        foreach ($gesamtWh as $devId => $wh) {
+            $whParts[] = htmlspecialchars($deviceMeta[$devId]['label']) . ': ' . $wh . ' ' . $unit1 . 'h';
+        }
+        echo implode(' | ', $whParts);
+        echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].$deviceParam.'\'">Reset</button>';
+        echo '</body></html>';
+    } else {
+    // === Per-device or single-device daily chart (existing code) ===
     function set_color($param, $default) {
         if (isset($_GET[$param]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET[$param])) {
             $rgb = [];
@@ -385,7 +636,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             return $default;
         }
     }
-    if ($_GET['3p']) {
+    if (!empty($_GET['3p'])) {
         $color6 = set_color('c6', $color6);
         $color7 = set_color('c7', $color7);
         $color8 = set_color('c8', $color8);
@@ -430,7 +681,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             }
         }
         $datasets = "{
-                    label: '".strip_tags($unit3_label)."',
+                    label: ".json_encode(strip_tags($unit3_label)).",
                     yAxisID: 'y_l1',
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -441,7 +692,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $scales = "y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },";
         if (!$dataPoints_l2_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit4_label)."',
+                    label: ".json_encode(strip_tags($unit4_label)).",
                     yAxisID: 'y_l2',
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -456,7 +707,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         if (!$dataPoints_l3_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit5_label)."',
+                    label: ".json_encode(strip_tags($unit5_label)).",
                     yAxisID: 'y_l3',
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -471,7 +722,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         if (!$dataPoints_l4_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit6_label)."',
+                    label: ".json_encode(strip_tags($unit6_label)).",
                     yAxisID: 'y_l4',
                     data: ".json_encode($dataPoints_l4, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -485,10 +736,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             $unit6 = $unit5;
         }
         if ($unit3 === $unit4 && $unit4 === $unit5 && $unit5 === $unit6) {
-            $tooltip_unit = "{ return context.parsed.y + ' $unit3'; }";
-            $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3'; } },";
+            $tooltip_unit = "{ return context.parsed.y + ' $unit3_js'; }";
+            $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3_js'; } },";
         } else {
-            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } else if (context.datasetIndex === 3) { return context.parsed.y + ' {$unit6}'; } }";
+            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3_js'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4_js}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5_js}'; } else if (context.datasetIndex === 3) { return context.parsed.y + ' {$unit6_js}'; } }";
             $ticks = "";
         }
 
@@ -524,9 +775,19 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $color4 = set_color('c4', $color4);
         $color5 = set_color('c5', $color5);
         $datasetIndex = 2;
+        $feed_dataset = '';
+        $feed_tooltip = '';
+        $feed_scale = '';
+        $wh_feed_dataset = '';
+        $wh_feed_tooltip = '';
+        $wh_feed_scale = '';
+        $axisY_max_wh = '';
+        $t_dataset = '';
+        $t_tooltip = '';
+        $t_scale = '';
         if ($feed_measured) {
             $feed_dataset = ",{
-                    label: '".strip_tags($unit1_label_out)."',
+                    label: ".json_encode(strip_tags($unit1_label_out)).",
                     yAxisID: 'y_feed',
                     data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -534,13 +795,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color3, 0.5)' ],
                     borderColor: [ 'rgba($color3, 1)' ],
                 }";
-            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1'; } ";
-            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },";
+            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1_js'; } ";
+            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1_js'; } } },";
             $datasetIndex++;
 
             $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
             $wh_feed_dataset = ",{
-                    label: '".strip_tags($unit1_label_out)." (Summe)',
+                    label: ".json_encode(strip_tags($unit1_label_out).' (Summe)').",
                     yAxisID: 'y_wh_feed',
                     data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -548,8 +809,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color4, 0.15)' ],
                     borderColor: [ 'rgba($color4, 0.3)' ],
                 }";
-            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1}h'; } ";
-            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },";
+            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1_js}h'; } ";
+            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1_js}h'; } } },";
             $datasetIndex++;
         }
         if ($unit2_display && $unit2_measured) {
@@ -557,15 +818,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             $min = isset($unit2_min) && $unit2_min !== false ? $unit2_min : ceil(min($dataPoints_t_wo_null)) - 1;
             $max = isset($unit2_max) && $unit2_max !== false ? $unit2_max : floor(max($dataPoints_t_wo_null)) + 1;
             $t_dataset = ",{
-                    label: '".strip_tags($unit2_label)."',
+                    label: ".json_encode(strip_tags($unit2_label)).",
                     yAxisID: 'y_t',
                     data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                     fill: false,
                     borderWidth: 2,
                     borderColor: [ 'rgba($color5, 0.5)' ],
                 }";
-            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2'; }";
-            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2'; } } },";
+            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2_js'; }";
+            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2_js'; } } },";
             $datasetIndex++;
         }
         echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
@@ -575,7 +836,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             type: 'line',
             data: {
                 datasets: [{
-                    label: '".($feed_measured ? strip_tags($unit1_label_in) : 'Leistung')."',
+                    label: ".json_encode($feed_measured ? strip_tags($unit1_label_in) : 'Leistung').",
                     yAxisID: 'y_p',
                     data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -583,7 +844,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                     backgroundColor: [ 'rgba($color1, 0.5)' ],
                     borderColor: [ 'rgba($color1, 1)' ],
                 },{
-                    label: '".($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : $unit1_label)."',
+                    label: ".json_encode($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : strip_tags($unit1_label)).",
                     yAxisID: 'y_wh',
                     data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -595,10 +856,10 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit1'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit1}h'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
+                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit1_js'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit1_js}h'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
                 },
-                scales: { 
-                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },
+                scales: {
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1_js'; } } },
                     y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
                     $feed_scale
                     $wh_feed_scale
@@ -623,7 +884,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }, false);
         </script>";
     echo '<form method="get" style="display: inline;">'.$form_params;
-    if (!$_GET['3p']) {
+    if (empty($_GET['3p'])) {
         if ($feed_measured) {
             echo $unit1_label_in.': '.$wh.' '.$unit1.'h | '.$unit1_label_out.': '.$wh_feed.' '.$unit1.'h | ';
         } else {
@@ -643,7 +904,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo "<option value=\"$value\"$selected>$text</option>";
     }
     echo '</select>';
-    if (!$_GET['3p']) {
+    if (empty($_GET['3p'])) {
         echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> '.$unit1.' (0 = dynamisch)';
     } else {
         echo '<input type="hidden" name="fix" value="'.$fix_axis_y.'" />';
@@ -661,20 +922,20 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo "<option value=\"$i\"$selected>$i_str</option>";
     }
     echo '</select>';
-    if ($extra_data || $_GET['3p']) {
-        $checked = $_GET['3p'] ? ' checked="checked"' : '';
+    if ($extra_data || !empty($_GET['3p'])) {
+        $checked = !empty($_GET['3p']) ? ' checked="checked"' : '';
         echo ' | <input id="3p" type="checkbox" name="3p" onchange="form.submit();"'.$checked.' /><label for="3p">Extradaten anzeigen</label>';
     }
     if ($pos === 0) {
-        $checked = $_GET['refresh'] ? ' checked="checked"' : '';
+        $checked = !empty($_GET['refresh']) ? ' checked="checked"' : '';
         echo ' | <input id="refresh" type="checkbox" name="refresh" onchange="form.submit();"'.$checked.' /><label for="refresh">Grafik aktualisieren</label>';
     }
     echo '</form>';
-    if (!$_GET['3p']) {
-        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.($_GET['refresh'] ? '&refresh' : '').'\'">#max</button>';
+    if (empty($_GET['3p'])) {
+        echo ' | <button id="max" onclick="location.href=\'?file='.$files[$pos]['date'].'&max'.(!empty($_GET['refresh']) ? '&refresh' : '').$deviceParam.'\'">#max</button>';
     }
-    echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].'\'">Reset</button>';
-    if ($power_details_resolution && !$_GET['3p']) {
+    echo ' | <button id="reset" onclick="location.href=\'?file='.$files[$pos]['date'].$deviceParam.'\'">Reset</button>';
+    if ($power_details_resolution && empty($_GET['3p'])) {
         list($power_details_wh2, $power_details_wh3) = pm_calculate_power_details($power_details_wh);
         echo '<style>.cell { border: 1px solid black; padding: 2px; margin:-1px 0 0 -1px; } .head { text-align: center; font-weight: bold; }</style>';
         echo '<p></p><div style="float: left; padding-bottom: 2px;"><div class="cell head">Leistung:</div><div class="cell">Dauer:</div><div class="cell">'.($feed_measured ? $unit1_label_in : $unit1_label).':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div><div class="cell head">Leistung:</div><div class="cell">'.$unit1_label.':</div></div>';
@@ -683,7 +944,8 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
     }
     echo '</body></html>';
-} elseif ($_GET['m']) {
+    } // end per-device/single-device daily chart else block
+} elseif (isset($_GET['m']) && $_GET['m']) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $unit1_label = $unit1_label_out;
@@ -694,7 +956,24 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $feed_measured = false;
     }
     $month = htmlentities(trim($_GET['m']));
-    list($chart_stats) = pm_scan_chart_stats();
+    // For gesamt in multi-device mode, merge chart_stats from all devices
+    if ($isMultiDevice && $isGesamtMode) {
+        $chart_stats = [];
+        foreach ($groupDeviceMeta as $devId => $_) {
+            list($devStats) = pm_scan_chart_stats($devId);
+            foreach ($devStats as $date => $data) {
+                if (!isset($chart_stats[$date])) {
+                    $chart_stats[$date] = [0 => $date, 1 => 0, 6 => null];
+                }
+                $chart_stats[$date][1] += floatval($data[1]);
+                if (isset($data[6])) {
+                    $chart_stats[$date][6] = ($chart_stats[$date][6] ?? 0) + floatval($data[6]);
+                }
+            }
+        }
+    } else {
+        list($chart_stats) = pm_scan_chart_stats($deviceSubdir);
+    }
 
     for ($i = 1; $i <= 31; $i++) {
         if ($i > 28 && substr($month, -2) == '02') {
@@ -741,14 +1020,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         die();
     }
-    $get_fix = trim($_GET['fix']);
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y * 8 / 100) * 100;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '').$deviceParam;
     echo '<title>'.$month.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a> <a id="expand" href="?y='.substr($month, 0, 4).(isset($_GET['feed']) ? '&feed' : '').$deviceParam.'" title="Zur Jahresansicht">📅</a>'.($feed_measured ? ' <a id="feed" href="?m='.$chart_stats_months[$pos].(isset($_GET['feed']) ? '' : '&feed').$deviceParam.'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?m='.$month.'&download'.$deviceParam.'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_months)-1) {
         echo '<a id="prev" href="?m='.$chart_stats_months[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -762,14 +1042,19 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
+    if ($isMultiDevice) {
+        $tabQuery = 'm=' . htmlspecialchars($month) . '&fix=' . $fix_axis_y . (isset($_GET['feed']) ? '&feed' : '');
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
+    var deviceParam = " . json_encode($deviceParam) . ";
     var ctx = document.getElementById('myChart');
     var myChart = new Chart(ctx, {
         type: 'bar',
         data: {
             datasets: [{
-                label: '".strip_tags($unit1_label)."',
+                label: ".json_encode(strip_tags($unit1_label)).",
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -783,7 +1068,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
                 legend: { display: false },
                 tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' {$unit1}h'; } } }
             },
-            scales: { 
+            scales: {
                 y: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },
             },
             elements: { point: { radius: 0, hitRadius: 10 } },
@@ -795,7 +1080,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            location.href = 'chart.php?file=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index];
+            location.href = 'chart.php?file=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + deviceParam;
         }
     }
     ctx.onmousemove = function(evt) {
@@ -811,13 +1096,13 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$month.'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="m" value="'.$month.'" />'.($isMultiDevice ? '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />' : '').$unit1_label.' ('.($isGesamtMode ? htmlspecialchars($activeGroup['label']) : 'gesamt').'): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_month) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_month).' '.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_month, 'strlen')).' '.$unit1.'h';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="7" onfocusout="form.submit();" /> '.$unit1.'h (0 = dynamisch)';
-} elseif ($_GET['y']) {
+} elseif (isset($_GET['y']) && $_GET['y']) {
     if (isset($_GET['feed'])) {
         $index = 6;
         $unit1_label = $unit1_label_out;
@@ -828,7 +1113,24 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         $feed_measured = false;
     }
     $year = htmlentities(trim($_GET['y']));
-    list($chart_stats) = pm_scan_chart_stats();
+    // For gesamt in multi-device mode, merge chart_stats from all devices
+    if ($isMultiDevice && $isGesamtMode) {
+        $chart_stats = [];
+        foreach ($groupDeviceMeta as $devId => $_) {
+            list($devStats) = pm_scan_chart_stats($devId);
+            foreach ($devStats as $date => $data) {
+                if (!isset($chart_stats[$date])) {
+                    $chart_stats[$date] = [0 => $date, 1 => 0, 6 => null];
+                }
+                $chart_stats[$date][1] += floatval($data[1]);
+                if (isset($data[6])) {
+                    $chart_stats[$date][6] = ($chart_stats[$date][6] ?? 0) + floatval($data[6]);
+                }
+            }
+        }
+    } else {
+        list($chart_stats) = pm_scan_chart_stats($deviceSubdir);
+    }
 
     for ($i = 1; $i <= 12; $i++) {
         $chart_stats_this_year[$year.'-'.($i < 10 ? '0'.$i : $i)] = null;
@@ -872,14 +1174,15 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         }
         die();
     }
-    $get_fix = trim($_GET['fix']);
+    $get_fix = trim($_GET['fix'] ?? '');
     $fix_axis_y = is_numeric($get_fix) && $get_fix >= 0 ? intval($get_fix) : round($fix_axis_y / 50) * 10;
+    $axisY_max = '';
     if ($fix_axis_y) {
         $axisY_max = " max: $fix_axis_y,";
     }
-    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '');
+    $params = '&fix='.$fix_axis_y.(isset($_GET['feed']) ? '&feed' : '').$deviceParam;
     echo '<title>'.$year.' ('.$unit1_label.': '.$kwh.' k'.$unit1.'h)</title><script src="js/chart.min.js"></script><script src="js/chart_keydown.js"></script><script src="js/swipe.js"></script>';
-    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
+    echo '<style>a { text-decoration: none; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a>'.($feed_measured ? ' <a id="feed" href="?y='.$chart_stats_years[$pos].(isset($_GET['feed']) ? '' : '&feed').$deviceParam.'" title="Zur '.(isset($_GET['feed']) ? $unit1_label_in : $unit1_label_out).'sansicht">🔃</a>' : '').'</div><div style="float: right;"><a id="download" href="chart.php?y='.$year.'&download'.$deviceParam.'" title="Daten herunterladen">💾</a></div><div style="text-align: center;">';
     echo '';
     if ($pos < count($chart_stats_years)-1) {
         echo '<a id="prev" href="?y='.$chart_stats_years[$pos+1].$params.'" title="vorheriger Monat">⏪</a>';
@@ -893,7 +1196,11 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         echo '<span style="opacity: 0.3;">⏩</span>';
     }
     echo '</div></div>';
-    $feed = isset($_GET['feed']) ? '&feed' : '';
+    if ($isMultiDevice) {
+        $tabQuery = 'y=' . htmlspecialchars($year) . '&fix=' . $fix_axis_y . (isset($_GET['feed']) ? '&feed' : '');
+        pm_render_device_tabs($activeDevice, $deviceMeta, $tabQuery);
+    }
+    $feed = isset($_GET['feed']) ? '&feed' : ''; // used in JS string
     echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
     <script>
     var ctx = document.getElementById('myChart');
@@ -901,7 +1208,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         type: 'bar',
         data: {
             datasets: [{
-                label: '".strip_tags($unit1_label)."',
+                label: ".json_encode(strip_tags($unit1_label)).",
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_year, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -927,7 +1234,7 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
     ctx.onclick = function(evt) {
         const points = myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
         if (points.length) {
-            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + '$feed';
+            location.href = 'chart.php?m=' + Object.keys(myChart.data.datasets[points[0].datasetIndex].data)[points[0].index] + '$feed' + " . json_encode($deviceParam) . ";
         }
     }
     ctx.onmousemove = function(evt) {
@@ -943,14 +1250,14 @@ if ($_GET['file'] || isset($_GET['today']) || isset($_GET['yesterday']) || isset
         document.body.style.opacity = '0.3';
     }, false);
     </script>";
-    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$year.'" />'.$unit1_label.' (gesamt): '.$kwh.' k'.$unit1.'h';
+    echo '<form method="get" style="display: inline;"><input type="hidden" name="y" value="'.$year.'" />'.($isMultiDevice ? '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />' : '').$unit1_label.' ('.($isGesamtMode ? htmlspecialchars($activeGroup['label']) : 'gesamt').'): '.$kwh.' k'.$unit1.'h';
     if (count($chart_stats_this_year) > 1) {
         echo ' | '.$unit1_label.' (max): '.max($chart_stats_this_year).' k'.$unit1.'h';
         echo ' | '.$unit1_label.' (min): '.min(array_filter($chart_stats_this_year, 'strlen')).' k'.$unit1.'h';
     }
     echo ' | Skala fixieren auf <input type="text" id="fix" name="fix" value="'.$fix_axis_y.'" size="4" onfocusout="form.submit();" /> k'.$unit1.'h (0 = dynamisch)';
 } else {
-    header("Location: overview.php");
+    header("Location: overview.php" . ($isMultiDevice ? '?device=' . urlencode($activeDevice) : ''));
 }
 
 //EOF

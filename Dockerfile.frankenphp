@@ -1,0 +1,45 @@
+FROM dunglas/frankenphp:php8.2
+
+# Install standard PHP extensions
+RUN install-php-extensions curl mbstring openssl
+
+# Build Swow from source (not on PECL)
+RUN apt-get update && apt-get install -y git autoconf gcc make \
+    && git clone --depth 1 https://github.com/swow/swow.git /tmp/swow \
+    && cd /tmp/swow/ext \
+    && phpize && ./configure --enable-swow-curl --enable-swow-ssl \
+    && make -j$(nproc) && make install \
+    && docker-php-ext-enable swow \
+    && rm -rf /tmp/swow \
+    && apt-get purge -y git autoconf gcc make && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Timezone
+ENV TZ=Europe/Berlin
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone \
+    && echo "date.timezone = Europe/Berlin" > /usr/local/etc/php/conf.d/timezone.ini
+
+# Install cron
+RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+
+# Copy application
+COPY . /app/public/
+
+# Data directory
+RUN mkdir -p /app/public/data && chown www-data:www-data /app/public/data
+VOLUME /app/public/data
+
+# Cron job for logging
+RUN echo '* * * * * www-data cd /app/public && /usr/local/bin/php /app/public/log.php >> /dev/null 2>&1' > /etc/cron.d/powermeter \
+    && chmod 0644 /etc/cron.d/powermeter
+
+# Custom Caddyfile with worker mode enabled
+COPY Caddyfile.frankenphp /etc/caddy/Caddyfile
+
+# Entrypoint ensures data dir permissions + starts cron
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+ENV PM_DATA_DIR=/app/public/data
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]

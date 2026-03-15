@@ -1,0 +1,18 @@
+{
+	skip_install_trust
+
+	frankenphp
+}
+
+:80 {
+	root /app/public/
+	encode zstd br gzip
+
+	# Rewrite /api/* to /api/index.php (replaces .htaccess)
+	@api path /api /api/*
+	rewrite @api /api/index.php
+
+	php_server {
+		worker /app/public/worker.php
+	}
+}
