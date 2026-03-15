@@ -89,7 +89,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
 
                     $deviceDir = $log_file_dir . $deviceId . '/';
                     if (!is_dir($deviceDir)) {
-                        mkdir($deviceDir, 0777, true);
+                        mkdir($deviceDir, 0755, true);
                     }
 
                     $deviceStatsFile = $deviceDir . 'stats.txt';

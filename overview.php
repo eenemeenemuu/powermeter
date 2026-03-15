@@ -18,6 +18,10 @@ if ($isMultiDevice) {
     $gesamtGroups = $config->getGesamtGroups();
     $defaultGroupId = $gesamtGroups[0]['id'] ?? 'gesamt';
     $activeDevice = $_GET['device'] ?? $defaultGroupId;
+    // Validate device parameter against known device IDs and group IDs
+    if (!$config->isGesamtGroup($activeDevice) && !isset($deviceMeta[$activeDevice])) {
+        $activeDevice = $defaultGroupId;
+    }
     $deviceParam = '&device=' . htmlspecialchars($activeDevice);
     $activeGroup = $config->getGesamtGroup($activeDevice);
     $isGesamtMode = $activeGroup !== null;
@@ -138,7 +142,7 @@ if ($power_details_resolution && !$isGesamtMode) {
         foreach (explode("\n", file_get_contents($detailsFile)) as $line) {
             $stat_parts = explode(',', $line);
             if ($stat_parts[0]) {
-                $power_details_wh[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1));
+                $power_details_wh[$stat_parts[0]] = unserialize(substr($line, strpos($line, ',') + 1), ['allowed_classes' => false]);
                 list($power_details_wh2[$stat_parts[0]], $power_details_wh3[$stat_parts[0]]) = pm_calculate_power_details($power_details_wh[$stat_parts[0]]);
                 $power_details_max_count = max(count($power_details_wh[$stat_parts[0]]), $power_details_max_count);
             }

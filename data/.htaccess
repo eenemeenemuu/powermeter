@@ -1,0 +1,4 @@
+# Deny direct access to sensitive files
+<FilesMatch "\.(json|txt)$">
+    Require all denied
+</FilesMatch>

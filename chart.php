@@ -18,6 +18,10 @@ if ($isMultiDevice) {
     $gesamtGroups = $config->getGesamtGroups();
     $defaultGroupId = $gesamtGroups[0]['id'] ?? 'gesamt';
     $activeDevice = $_GET['device'] ?? $defaultGroupId;
+    // Validate device parameter against known device IDs and group IDs
+    if (!$config->isGesamtGroup($activeDevice) && !isset($deviceMeta[$activeDevice])) {
+        $activeDevice = $defaultGroupId;
+    }
     $deviceParam = '&device=' . htmlspecialchars($activeDevice);
     $activeGroup = $config->getGesamtGroup($activeDevice);
     $isGesamtMode = $activeGroup !== null;
@@ -166,9 +170,9 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         return false;
     }
-    $res = !empty($_GET['res']) ? $_GET['res'] : $res;
-    $t1 = $_GET['t1'] ?? 0;
-    $t2 = $_GET['t2'] ?? 23;
+    $res = !empty($_GET['res']) ? (int)$_GET['res'] : $res;
+    $t1 = (int)($_GET['t1'] ?? 0);
+    $t2 = (int)($_GET['t2'] ?? 23);
     if ($t1 > $t2) {
         $t1 = $t2;
     }
@@ -429,6 +433,13 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
     } elseif ($feed_measured) {
         $axisY_max = get_y_min_max('max', $dataPoints_y_max);
     }
+    // JS-safe unit strings for use in script blocks
+    $unit1_js = addslashes($unit1);
+    $unit2_js = addslashes($unit2);
+    $unit3_js = addslashes($unit3);
+    $unit4_js = addslashes($unit4);
+    $unit5_js = addslashes($unit5);
+    $unit6_js = addslashes($unit6);
     echo '<html><head><link rel="icon" type="image/png" href="favicon.png" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width" />';
     echo '<title>'.$date;
     if ($feed_measured) {
@@ -447,9 +458,9 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $form_params .= '<input type="hidden" name="device" value="'.htmlspecialchars($activeDevice).'" />';
     }
     for ($i = 1; $i <= 9; $i++) {
-        if (isset($_GET['c'.$i]) && preg_match('/[0-9a-zA-Z]{6}/', $_GET['c'.$i])) {
-            $params .= '&c'.$i.'='.$_GET['c'.$i];
-            $form_params .= '<input type="hidden" name="c'.$i.'" value="'.$_GET['c'.$i].'" />';
+        if (isset($_GET['c'.$i]) && preg_match('/^[0-9a-fA-F]{6}$/', $_GET['c'.$i])) {
+            $params .= '&c'.$i.'='.htmlspecialchars($_GET['c'.$i]);
+            $form_params .= '<input type="hidden" name="c'.$i.'" value="'.htmlspecialchars($_GET['c'.$i]).'" />';
         }
     }
     echo '<style>a { text-decoration: none; } input,select,button { cursor: pointer; }</style></head><body><div style="width: 100%;"><div style="float: left;"><a id="live" href="index.php" title="Zur aktuellen Leistungsanzeige">🔌</a> <a id="overview" href="overview.php'.($isMultiDevice ? '?device='.htmlspecialchars($activeDevice) : '').'" title="Zur Übersicht">📋</a> <a id="expand" href="?m='.substr($files[$pos]['date'], 0, 7).$deviceParam.'" title="Zur Monatsansicht">📅</a></div><div style="float: right;">'.(!$isGesamtMode ? '<a id="download" href="chart.php?file='.$files[$pos]['date'].'&download'.$deviceParam.'" title="Daten herunterladen">💾</a>' : '').'</div><div style="text-align: center;">';
@@ -556,7 +567,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         foreach ($gesamtDatasets as $ds) {
             if ($dsJs) $dsJs .= ',';
             $dsJs .= "{
-                label: '" . $ds['label'] . "',
+                label: " . json_encode($ds['label']) . ",
                 yAxisID: 'y_p',
                 data: " . json_encode($ds['data'], JSON_NUMERIC_CHECK) . ",
                 fill: false,
@@ -567,7 +578,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         // Add Gesamt sum dataset
         $dsJs .= ",{
-            label: '" . htmlspecialchars($activeGroup['label']) . "',
+            label: " . json_encode($activeGroup['label']) . ",
             yAxisID: 'y_p',
             data: " . json_encode($sumPoints, JSON_NUMERIC_CHECK) . ",
             fill: true,
@@ -586,10 +597,10 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' $unit1'; } } }
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y + ' $unit1_js'; } } }
                 },
                 scales: {
-                    y_p: { position: 'right', suggestedMin: 0,$axisY_max_g ticks: { callback: function(value) { return value + ' $unit1'; } } },
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max_g ticks: { callback: function(value) { return value + ' $unit1_js'; } } },
                 },
                 elements: { point: { radius: 0, hitRadius: 10 } },
                 maintainAspectRatio: false,
@@ -670,7 +681,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             }
         }
         $datasets = "{
-                    label: '".strip_tags($unit3_label)."',
+                    label: ".json_encode(strip_tags($unit3_label)).",
                     yAxisID: 'y_l1',
                     data: ".json_encode($dataPoints_l1, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -681,7 +692,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $scales = "y_l1: {{$axisY_min}{$axisY_max}{$ticks} position: 'right' },";
         if (!$dataPoints_l2_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit4_label)."',
+                    label: ".json_encode(strip_tags($unit4_label)).",
                     yAxisID: 'y_l2',
                     data: ".json_encode($dataPoints_l2, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -696,7 +707,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         if (!$dataPoints_l3_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit5_label)."',
+                    label: ".json_encode(strip_tags($unit5_label)).",
                     yAxisID: 'y_l3',
                     data: ".json_encode($dataPoints_l3, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -711,7 +722,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         }
         if (!$dataPoints_l4_empty) {
             $datasets .= ",{
-                    label: '".strip_tags($unit6_label)."',
+                    label: ".json_encode(strip_tags($unit6_label)).",
                     yAxisID: 'y_l4',
                     data: ".json_encode($dataPoints_l4, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -725,10 +736,10 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             $unit6 = $unit5;
         }
         if ($unit3 === $unit4 && $unit4 === $unit5 && $unit5 === $unit6) {
-            $tooltip_unit = "{ return context.parsed.y + ' $unit3'; }";
-            $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3'; } },";
+            $tooltip_unit = "{ return context.parsed.y + ' $unit3_js'; }";
+            $ticks = " ticks: { callback: function(value, index, values) { return value + ' $unit3_js'; } },";
         } else {
-            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5}'; } else if (context.datasetIndex === 3) { return context.parsed.y + ' {$unit6}'; } }";
+            $tooltip_unit = "{ if (context.datasetIndex === 0) { return context.parsed.y + ' $unit3_js'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit4_js}'; } else if (context.datasetIndex === 2) { return context.parsed.y + ' {$unit5_js}'; } else if (context.datasetIndex === 3) { return context.parsed.y + ' {$unit6_js}'; } }";
             $ticks = "";
         }
 
@@ -776,7 +787,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         $t_scale = '';
         if ($feed_measured) {
             $feed_dataset = ",{
-                    label: '".strip_tags($unit1_label_out)."',
+                    label: ".json_encode(strip_tags($unit1_label_out)).",
                     yAxisID: 'y_feed',
                     data: ".json_encode($dataPoints_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -784,13 +795,13 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
                     backgroundColor: [ 'rgba($color3, 0.5)' ],
                     borderColor: [ 'rgba($color3, 1)' ],
                 }";
-            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1'; } ";
-            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },";
+            $feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit1_js'; } ";
+            $feed_scale = "y_feed: { display: false, suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1_js'; } } },";
             $datasetIndex++;
 
             $axisY_max_wh = ', max: '.ceil(max($wh, $wh_feed)/100)*100;
             $wh_feed_dataset = ",{
-                    label: '".strip_tags($unit1_label_out)." (Summe)',
+                    label: ".json_encode(strip_tags($unit1_label_out).' (Summe)').",
                     yAxisID: 'y_wh_feed',
                     data: ".json_encode($dataPoints_wh_feed, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -798,8 +809,8 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
                     backgroundColor: [ 'rgba($color4, 0.15)' ],
                     borderColor: [ 'rgba($color4, 0.3)' ],
                 }";
-            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1}h'; } ";
-            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1}h'; } } },";
+            $wh_feed_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' {$unit1_js}h'; } ";
+            $wh_feed_scale = "y_wh_feed: { display: false, suggestedMin: 0{$axisY_max_wh}, ticks: { callback: function(value, index, values) { return value + ' {$unit1_js}h'; } } },";
             $datasetIndex++;
         }
         if ($unit2_display && $unit2_measured) {
@@ -807,15 +818,15 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             $min = isset($unit2_min) && $unit2_min !== false ? $unit2_min : ceil(min($dataPoints_t_wo_null)) - 1;
             $max = isset($unit2_max) && $unit2_max !== false ? $unit2_max : floor(max($dataPoints_t_wo_null)) + 1;
             $t_dataset = ",{
-                    label: '".strip_tags($unit2_label)."',
+                    label: ".json_encode(strip_tags($unit2_label)).",
                     yAxisID: 'y_t',
                     data: ".json_encode($dataPoints_t, JSON_NUMERIC_CHECK).",
                     fill: false,
                     borderWidth: 2,
                     borderColor: [ 'rgba($color5, 0.5)' ],
                 }";
-            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2'; }";
-            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2'; } } },";
+            $t_tooltip = "else if (context.datasetIndex === $datasetIndex) { return context.parsed.y + ' $unit2_js'; }";
+            $t_scale = "y_t: { position: 'left', suggestedMin: $min, suggestedMax: $max, ticks: { callback: function(value, index, values) { return value + ' $unit2_js'; } } },";
             $datasetIndex++;
         }
         echo "<div id=\"chartContainer\" style=\"height: 90%; width: 100%;\"><canvas id=\"myChart\"></canvas></div>
@@ -825,7 +836,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             type: 'line',
             data: {
                 datasets: [{
-                    label: '".($feed_measured ? strip_tags($unit1_label_in) : 'Leistung')."',
+                    label: ".json_encode($feed_measured ? strip_tags($unit1_label_in) : 'Leistung').",
                     yAxisID: 'y_p',
                     data: ".json_encode($dataPoints, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -833,7 +844,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
                     backgroundColor: [ 'rgba($color1, 0.5)' ],
                     borderColor: [ 'rgba($color1, 1)' ],
                 },{
-                    label: '".($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : $unit1_label)."',
+                    label: ".json_encode($feed_measured ? strip_tags($unit1_label_in).' (Summe)' : strip_tags($unit1_label)).",
                     yAxisID: 'y_wh',
                     data: ".json_encode($dataPoints_wh, JSON_NUMERIC_CHECK).",
                     fill: true,
@@ -845,10 +856,10 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
             options: {
                 plugins: {
                     legend: { display: true },
-                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit1'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit1}h'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
+                    tooltip: { callbacks: { label: function(context) { if (context.datasetIndex === 0) { return context.parsed.y + ' $unit1_js'; } else if (context.datasetIndex === 1) { return context.parsed.y + ' {$unit1_js}h'; } {$feed_tooltip}{$wh_feed_tooltip}{$t_tooltip} } } }
                 },
-                scales: { 
-                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1'; } } },
+                scales: {
+                    y_p: { position: 'right', suggestedMin: 0,$axisY_max ticks: { callback: function(value, index, values) { return value + ' $unit1_js'; } } },
                     y_wh: { display: false, suggestedMin: 0{$axisY_max_wh} },
                     $feed_scale
                     $wh_feed_scale
@@ -1043,7 +1054,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         type: 'bar',
         data: {
             datasets: [{
-                label: '".strip_tags($unit1_label)."',
+                label: ".json_encode(strip_tags($unit1_label)).",
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_month, JSON_NUMERIC_CHECK).",
                 fill: true,
@@ -1197,7 +1208,7 @@ if (isset($_GET['file']) && $_GET['file'] || isset($_GET['today']) || isset($_GE
         type: 'bar',
         data: {
             datasets: [{
-                label: '".strip_tags($unit1_label)."',
+                label: ".json_encode(strip_tags($unit1_label)).",
                 yAxisID: 'y',
                 data: ".json_encode($chart_stats_this_year, JSON_NUMERIC_CHECK).",
                 fill: true,
