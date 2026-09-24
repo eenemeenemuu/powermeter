@@ -34,7 +34,7 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         $regex_check = ['[0-9]{2}\.[0-9]{2}\.[0-9]{4}', '[0-9]{2}:[0-9]{2}:[0-9]{2}'];
         for ($i = 0; $i < 14; $i++) {
             $regex_check[] = '[\-0-9]{1,6}(\.[0-9]{1,3})?';
-        } 
+        }
         if (isset($_POST['stats'])) {
             $stats_string = $_POST['stats'];
         } elseif (@unserialize($_GET['stats']) !== false) {
@@ -45,14 +45,16 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
         if (!$stats_string || file_exists($log_file_dir.'stats.txt') && file_get_contents($log_file_dir.'stats.txt') == $stats_string) {
             die();
         }
-        foreach (explode(",", $stats_string) as $stat) {
-            if ($stat && !preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
-                die();
+        foreach (explode("\n", $stats_string) as $stats_string_line) {
+            foreach (explode(",", $stats_string_line) as $stat) {
+                if ($stat && !preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
+                    continue 2;
+                }
             }
-        }
-        file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
-        if (!(isset($_POST['buffer']) && $_POST['buffer'] == '1')) {
-            file_put_contents($log_file_dir.'stats.txt', $stats_string);
+            file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
+            if (!(isset($_POST['buffer']) && $_POST['buffer'] == '1')) {
+                file_put_contents($log_file_dir.'stats.txt', $stats_string);
+            }
         }
     }
 } else {
