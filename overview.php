@@ -29,8 +29,12 @@ if ($_GET['update'] == 'missing') {
 }
 
 list($chart_stats, $chart_stats_month, $chart_stats_month_feed) = pm_scan_chart_stats();
-krsort($chart_stats_month);
-krsort($chart_stats_month_feed);
+if ($chart_stats_month) {
+    krsort($chart_stats_month);
+}
+if ($chart_stats_month_feed) {
+    krsort($chart_stats_month_feed);
+}
 
 $feed_measured = false;
 foreach ($chart_stats as $data) {
