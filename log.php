@@ -46,14 +46,15 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             die();
         }
         foreach (explode("\n", $stats_string) as $stats_string_line) {
+            $regex_check_line = $regex_check;
             foreach (explode(",", $stats_string_line) as $stat) {
-                if ($stat && !preg_match('/^'.array_shift($regex_check).'$/', $stat)) {
+                if ($stat && !preg_match('/^'.array_shift($regex_check_line).'$/', $stat)) {
                     continue 2;
                 }
             }
-            file_put_contents($log_file_dir.date_dot2dash(substr($stats_string, 0, 10)).'.csv', $stats_string."\n", FILE_APPEND);
+            file_put_contents($log_file_dir.date_dot2dash(substr($stats_string_line, 0, 10)).'.csv', $stats_string_line."\n", FILE_APPEND);
             if (!(isset($_POST['buffer']) && $_POST['buffer'] == '1')) {
-                file_put_contents($log_file_dir.'stats.txt', $stats_string);
+                file_put_contents($log_file_dir.'stats.txt', $stats_string_line);
             }
         }
     }
