@@ -46,6 +46,9 @@ if (isset($_POST['stats']) || isset($_GET['stats'])) {
             die();
         }
         foreach (explode("\n", $stats_string) as $stats_string_line) {
+            if (!$stats_string_line) {
+                continue;
+            }
             $regex_check_line = $regex_check;
             foreach (explode(",", $stats_string_line) as $stat) {
                 if ($stat && !preg_match('/^'.array_shift($regex_check_line).'$/', $stat)) {

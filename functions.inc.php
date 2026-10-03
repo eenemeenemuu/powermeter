@@ -363,7 +363,7 @@ function pm_scan_chart_stats() {
     global $log_file_dir, $file_dates;
     foreach (explode("\n", file_get_contents($log_file_dir.'chart_stats.csv')) as $line) {
         $stat_parts = explode(',', $line);
-        if ($stat_parts[0]) {
+        if ($stat_parts[0] && $stat_parts[0] != '--') {
             $chart_stats[$stat_parts[0]] = $stat_parts;
             $date_parts = explode('-', $stat_parts[0]);
             $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
