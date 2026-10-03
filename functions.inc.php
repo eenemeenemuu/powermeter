@@ -366,7 +366,9 @@ function pm_scan_chart_stats() {
         if ($stat_parts[0] && $stat_parts[0] != '--') {
             $chart_stats[$stat_parts[0]] = $stat_parts;
             $date_parts = explode('-', $stat_parts[0]);
-            $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
+            if ($stat_parts[1]) {
+                $chart_stats_month[$date_parts[0]][$date_parts[1]] += $stat_parts[1];
+            }
             if (isset($stat_parts[6])) {
                 $chart_stats_month_feed[$date_parts[0]][$date_parts[1]] += $stat_parts[6];
             }
