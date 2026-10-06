@@ -68,7 +68,9 @@ We added a basic Dockerfile.
 * git checkout
 * Add and edit config.inc.php
 * docker build powermeter -t powermeter
-* docker run -p 80:80 powermeter
+* docker run -p 8080:80 powermeter
+* Log of Values are running in a loop, if you don't want to log values comment the curl in loop.sh out
+
 
 ## Credits / used libraries
 * Chart.js (https://github.com/chartjs/Chart.js)
